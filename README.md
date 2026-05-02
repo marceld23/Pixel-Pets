@@ -14,6 +14,21 @@ Each device renders the same set of animals — **Bear, Cat, Dog** — chosen on
 
 🐻 **Live demo + landing page**: <https://marceld23.github.io/Pixel-Pets/>. The site has a click-and-poke browser pet, an overview of all variants and the get-started guide. Source under [`site/`](site/), deployed via GitHub Actions on every push.
 
+## Highlights
+
+- **Three animals × three pet variants** — pick **Bear / Cat / Dog** on first boot (changeable later in Settings), running on **Muffin** (CoreS3 + LLM), **Visu** (CoreS3 alone) or **Goo-Goo** (Core2). Same source tree.
+- **World-aware pet** — at boot the device looks up your **location** (IP geolocation via ip-api), pulls **real weather**, **sunrise / sunset times** and the **moon phase** from open-meteo, and adapts the scene to the actual time of day at your location: pale-blue **Morning** sky → clear **Day** sky → muted **Evening** dusk → dark **Night** with a crescent moon. The sun and clouds tint with the same phase. All cached in NVS so it survives reboots offline.
+- **Battery-backed clock + NTP sync** — wall-clock time is synced once a day over Wi-Fi and persisted by the RTC in between, so the time-of-day rendering and the parental session limit work even with no network on a given day.
+- **Voice control** *(Muffin only)* — wake word **"Muffin"**, offline **Whisper** speech-to-text + **Qwen3-0.6B** intent classifier running on the Module-LLM expansion. Plain sentences ("eat something", "let's dance", "turn on the radio") trigger matching actions. No cloud, no audio leaves the device.
+- **Front camera + selfies** *(Muffin / Visu)* — proximity-wake when you walk past, photo button overlays the pet on a selfie, 5-slot LittleFS gallery with delete.
+- **ESP-NOW Friends + Pip accessory** — two pets in range pair with a synchronised tap and exchange gifts / hearts / food / toys over long-range ESP-NOW (no router). The optional **Pip** (M5StickC PLUS2) acts as a pocket-sized treat thrower: pick Apple / Carrot / Bone with BtnA, wrist-flick to throw, home pet eats it within ~200 ms.
+- **Web radio** — WDR Die Maus (DE) / Fun Kids UK (EN) in the media menu, pet sways to the music; voice-triggerable on Muffin.
+- **Mini-games + scenes** — squat / jump / yoga workouts, butterflies / mushrooms / surf / scorpion / asteroids / cross-the-street per scene, foraging for apple / berry / fish, five toys with boredom mechanics, scene travel between Bedroom / Meadow / Forest / Beach / City / Desert / Space.
+- **Parent dashboard** — captive-portal Wi-Fi setup, optional **`<pet>-setup.local`** web server for live stats and remote-edit of the daily play-session limit (5–120 min). Session expiry triggers a 30-minute lockout that survives reboots.
+- **Eleven moods + gestures** — Idle / Happy / Excited / Love / Sleepy / Sleeping / Sad / Startled / Laughing / Eating / Speaking, driven by happiness / energy / fullness needs. Touch zones (forehead / cheeks / mouth / ears), IMU-based petting / shake / stand reactions, somersault on circle drag, sing-and-applause when tilted upright.
+
+See the [Version history](#version-history) for the full per-target breakdown.
+
 ## Targets
 
 The three pets:
