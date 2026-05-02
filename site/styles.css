@@ -1,0 +1,564 @@
+/* ── Pixel Pets landing page ───────────────────────────────────────────────
+   Warm pastel palette, generous whitespace, no images required (the pet
+   illustrations are all canvas-rendered).  Layout is mobile-first; the
+   hero turns into a 2-column grid above 900 px. */
+
+:root {
+  --bg-1:        #fff4ec;
+  --bg-2:        #f1e5fb;
+  --surface:     #fffaf5;
+  --surface-2:   #f5e8fb;
+  --ink:         #2d2440;
+  --ink-soft:    #5a4d72;
+  --accent:      #b780e5;
+  --accent-deep: #8a55c2;
+  --accent-soft: #e8d3f8;
+  --warn:        #d8716e;
+  --line:        #e6d8e8;
+  --shadow:      0 12px 36px rgba(80, 50, 120, 0.12);
+  --shadow-sm:   0 4px 14px rgba(80, 50, 120, 0.08);
+  --radius:      14px;
+  --radius-lg:   22px;
+  --gutter:      clamp(16px, 4vw, 48px);
+  --max-width:   1180px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+               sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse at top left,  var(--bg-1) 0%,  transparent 60%),
+    radial-gradient(ellipse at bottom right, var(--bg-2) 0%, transparent 60%),
+    #fbf6ff;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent-deep); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+h1, h2, h3 { color: var(--ink); margin: 0 0 .4em; }
+h1 { font-size: clamp(28px, 4vw, 44px); line-height: 1.1; letter-spacing: -.5px; }
+h2 { font-size: clamp(22px, 3vw, 32px); margin-bottom: .25em; }
+h3 { font-size: 18px; }
+
+p  { margin: 0 0 1em; color: var(--ink-soft); }
+
+code, pre {
+  font-family: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo,
+               Consolas, monospace;
+  font-size: 13px;
+}
+pre {
+  background: var(--ink);
+  color: #f8f0ff;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  margin: 12px 0;
+  box-shadow: var(--shadow-sm);
+}
+pre code { background: none; padding: 0; color: inherit; }
+:not(pre) > code {
+  background: var(--surface-2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--accent-deep);
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 14px var(--gutter);
+  background: rgba(255, 250, 246, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent-deep);
+  font-size: 15px;
+}
+.brand-mark { white-space: nowrap; }
+
+.site-nav {
+  display: flex;
+  gap: 18px;
+  margin-left: 16px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.site-nav a {
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 500;
+}
+.site-nav a:hover { color: var(--accent-deep); text-decoration: none; }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.lang-toggle {
+  background: var(--surface-2);
+  color: var(--accent-deep);
+  border: 1px solid var(--accent-soft);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.lang-toggle:hover { background: var(--accent-soft); }
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid transparent;
+  transition: transform .12s ease, box-shadow .12s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn:hover { transform: translateY(-1px); text-decoration: none; }
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 6px 18px rgba(183, 128, 229, 0.45);
+}
+.btn-primary:hover { background: var(--accent-deep); color: white; }
+
+.btn-ghost {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+.btn-ghost:hover { background: var(--surface-2); }
+
+/* ── Hero ───────────────────────────────────────────────────────────────── */
+
+.hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(24px, 5vw, 56px);
+  padding: clamp(36px, 6vw, 80px) var(--gutter) clamp(48px, 6vw, 80px);
+  max-width: var(--max-width);
+  margin: 0 auto;
+  align-items: center;
+}
+
+.hero-text { max-width: 540px; }
+.hero-text p { font-size: 17px; }
+.hero-cta {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.hero-highlight {
+  /* Flaggschiff-Spotlight im Hero: hebt Muffin als KI-Variante früh hervor. */
+  margin-top: 22px;
+  padding: 14px 18px;
+  background: linear-gradient(90deg,
+              rgba(183, 128, 229, 0.12),
+              rgba(183, 128, 229, 0.04));
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  font-size: 15px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.hero-demo { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+@media (min-width: 900px) {
+  .hero { grid-template-columns: 1fr 1fr; }
+}
+
+/* Device frame: rounded grey body around the canvas with a chin label,
+   reminiscent of an M5Stack Core2 form factor. */
+.device-frame {
+  background: linear-gradient(180deg, #2c2638 0%, #1c1828 100%);
+  border-radius: 24px;
+  padding: 28px 16px 50px;
+  box-shadow: var(--shadow);
+  position: relative;
+  width: min(420px, 90vw);
+}
+.device-frame canvas {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 320 / 240;
+  display: block;
+  background: #000;
+  border-radius: 6px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: pointer;
+}
+.device-label {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ffe9ff;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 4px;
+  opacity: .55;
+}
+
+.hint {
+  font-size: 14px;
+  color: var(--ink-soft);
+  font-style: italic;
+  margin: 0;
+  text-align: center;
+}
+
+/* ── Section scaffolding ────────────────────────────────────────────────── */
+
+.section {
+  padding: clamp(48px, 7vw, 96px) var(--gutter);
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+.section-alt {
+  max-width: none;
+  background: linear-gradient(180deg,
+    rgba(255, 244, 236, 0.55) 0%,
+    rgba(241, 229, 251, 0.45) 100%);
+  margin: 0;
+  position: relative;
+}
+.section-alt > * { max-width: var(--max-width); margin-left: auto; margin-right: auto; }
+.section-alt > h2,
+.section-alt > .section-lead { padding: 0 var(--gutter); }
+
+.section-lead {
+  font-size: 17px;
+  color: var(--ink-soft);
+  max-width: 640px;
+  margin-bottom: 32px;
+}
+
+.cards-disclaimer {
+  margin-top: 18px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-soft);
+  opacity: 0.75;
+  text-align: center;
+}
+
+/* ── Pet cards ──────────────────────────────────────────────────────────── */
+
+.pet-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.pet-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px 22px;
+  box-shadow: var(--shadow-sm);
+  transition: transform .15s ease, box-shadow .15s ease;
+  position: relative;
+}
+.pet-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+}
+
+/* Muffin: Flaggschiff-Card mit Akzent-Border, Glow-Schatten und Ribbon. */
+.pet-card-flagship {
+  border-color: var(--accent);
+  border-width: 2px;
+  box-shadow: 0 0 0 4px rgba(183, 128, 229, 0.12),
+              var(--shadow-sm);
+}
+.pet-card-flagship:hover {
+  box-shadow: 0 0 0 4px rgba(183, 128, 229, 0.18),
+              var(--shadow);
+}
+.flagship-ribbon {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 12px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+/* Pip: Accessory-Card. Dezent kühlere Border + grauer Ribbon damit klar
+   ist dass es kein viertes Pet ist sondern ein Begleitgerät. */
+.pet-card-accessory {
+  border-color: var(--ink-soft);
+  border-style: dashed;
+  background: var(--surface-2, #fafafa);
+}
+.accessory-ribbon {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--ink-soft);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 12px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.pet-card canvas {
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  margin: 0 auto 12px;
+  border-radius: 10px;
+  image-rendering: pixelated;
+  background: linear-gradient(180deg, #f5e6f8, #ead2f0);
+  aspect-ratio: 4 / 3;
+}
+.pet-card[data-pet="pip"] canvas {
+  max-width: 90px;
+  aspect-ratio: 135 / 240;
+}
+.pet-card h3 {
+  font-size: 22px;
+  margin-bottom: 4px;
+  color: var(--accent-deep);
+}
+.pet-card .hardware {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+  font-weight: 500;
+}
+.pet-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.pet-features li {
+  padding: 4px 0;
+  padding-left: 18px;
+  position: relative;
+}
+.pet-features li::before {
+  content: "♥";
+  color: var(--accent);
+  position: absolute;
+  left: 0;
+  font-size: 12px;
+  top: 7px;
+}
+
+/* ── Hardware shopping list (under the pet cards) ──────────────────────── */
+
+.shopping-heading {
+  margin-top: 40px;
+  font-size: 22px;
+  color: var(--accent-deep);
+}
+.shopping-lead {
+  margin: 6px 0 16px;
+  color: var(--ink-soft);
+}
+.shopping-subhead {
+  margin: 18px 0 8px;
+  font-size: 15px;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.shopping-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.shopping-list li {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.shopping-list li strong {
+  color: var(--accent-deep);
+  margin-right: 4px;
+}
+.shopping-list a {
+  color: var(--accent-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.shopping-list .shopping-note {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+/* ── Feature grid ───────────────────────────────────────────────────────── */
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 22px;
+  margin-top: 28px;
+}
+
+.feature {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow-sm);
+}
+/* Voice-Feature-Card als Muffin-Spotlight visuell akzentuieren. */
+.feature-flagship {
+  border-color: var(--accent);
+  border-width: 2px;
+  box-shadow: 0 0 0 4px rgba(183, 128, 229, 0.10),
+              var(--shadow-sm);
+}
+.feature-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+.feature h3 small {
+  font-weight: 400;
+  color: var(--ink-soft);
+  font-size: 13px;
+  margin-left: 8px;
+}
+.feature .feature-tag {
+  /* Pet-Variant-Hinweis unter der Überschrift, einheitlich für alle Cards. */
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ink-soft);
+  opacity: 0.7;
+  margin: -4px 0 8px 0;
+  letter-spacing: 0.3px;
+}
+.feature p {
+  font-size: 14.5px;
+  margin: 0;
+}
+
+/* ── Parents grid ───────────────────────────────────────────────────────── */
+
+.parents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 22px;
+  margin-top: 28px;
+}
+.parent-point {
+  background: var(--surface);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  box-shadow: var(--shadow-sm);
+}
+.parent-point h3 { color: var(--accent-deep); margin-top: 0; }
+.parent-point p { margin: 0; font-size: 14.5px; }
+
+/* ── Steps (get started) ────────────────────────────────────────────────── */
+
+.steps {
+  list-style: none;
+  padding: 0;
+  margin: 28px 0 0;
+  counter-reset: step;
+  display: grid;
+  gap: 22px;
+}
+.steps li {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 22px 26px;
+  box-shadow: var(--shadow-sm);
+}
+.steps li h3 { margin-top: 0; }
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+
+.site-footer {
+  padding: 32px var(--gutter) 48px;
+  text-align: center;
+  border-top: 1px solid var(--line);
+  margin-top: 64px;
+  background: var(--surface);
+}
+.site-footer p {
+  margin: 4px 0;
+  font-size: 14px;
+}
+.footer-fineprint {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+}
+
+/* ── Privacy page ──────────────────────────────────────────────────────── */
+
+.privacy-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: clamp(36px, 6vw, 64px) var(--gutter);
+}
+.privacy-page h1 { margin-bottom: 24px; }
+.privacy-page h2 { margin-top: 32px; }
+
+/* ── Tiny screen polish ────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .site-nav { display: none; }
+  .header-actions .btn-ghost { display: none; }
+}

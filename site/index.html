@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pixel Pets — virtual pets on M5Stack hardware</title>
+  <meta name="description"
+        content="Open-source virtual pets that run on M5Stack devices. Pet logic, voice control, ESP-NOW friends and more." />
+  <meta name="theme-color" content="#b780e5" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='20' cy='22' r='8' fill='%23c19272'/%3E%3Ccircle cx='44' cy='22' r='8' fill='%23c19272'/%3E%3Ccircle cx='32' cy='34' r='22' fill='%23c19272'/%3E%3Cellipse cx='32' cy='42' rx='10' ry='7' fill='%23f5dcc4'/%3E%3Ccircle cx='32' cy='38' r='2' fill='%232a1f2c'/%3E%3C/svg%3E" />
+</head>
+<body>
+
+<header class="site-header">
+  <a href="#top" class="brand">
+    <span class="brand-mark">PIXEL PETS</span>
+  </a>
+  <nav class="site-nav">
+    <a href="#pets"        data-en="Pets"         data-de="Pets">Pets</a>
+    <a href="#features"    data-en="Features"     data-de="Features">Features</a>
+    <a href="#parents"     data-en="For parents"  data-de="Für Eltern">For parents</a>
+    <a href="#getstarted"  data-en="Get started"  data-de="Loslegen">Get started</a>
+  </nav>
+  <div class="header-actions">
+    <button id="lang-toggle" class="lang-toggle"
+            aria-label="Toggle language" title="Toggle language">EN / DE</button>
+    <a href="https://github.com/duetscher/pixel-pets"
+       class="btn btn-ghost" rel="noopener">GitHub</a>
+  </div>
+</header>
+
+<main>
+
+<section class="hero" id="top">
+  <div class="hero-text">
+    <h1 data-en="Your handmade virtual pet"
+        data-de="Dein selbstgebautes virtuelles Pet">Your handmade virtual pet</h1>
+    <p data-en="Open source, runs on small M5Stack devices, made for kids and the young-at-heart. No cloud account, no tracking, no subscription — just a friendly little creature on your desk."
+       data-de="Open Source, läuft auf kleinen M5Stack-Geräten, gemacht für Kinder und Junggebliebene. Kein Cloud-Account, kein Tracking, kein Abo — nur ein freundlicher kleiner Begleiter auf deinem Schreibtisch.">
+      Open source, runs on small M5Stack devices, made for kids and the young-at-heart. No cloud account, no tracking, no subscription — just a friendly little creature on your desk.</p>
+    <div class="hero-cta">
+      <a href="#getstarted" class="btn btn-primary"
+         data-en="Get started" data-de="Loslegen">Get started</a>
+      <a href="#pets" class="btn btn-ghost"
+         data-en="Meet the pets" data-de="Die Pets">Meet the pets</a>
+    </div>
+    <p class="hero-highlight"
+       data-en="✨ The flagship pet, Muffin, hears you call its name and understands what you ask — fully offline, running its own small AI on a Module-LLM expansion."
+       data-de="✨ Das Flaggschiff-Pet Muffin hört auf seinen Namen und versteht, was du sagst — komplett offline, mit eigener kleiner KI auf einem Module-LLM-Aufsatz.">
+      ✨ The flagship pet, Muffin, hears you call its name and understands what you ask — fully offline, running its own small AI on a Module-LLM expansion.</p>
+  </div>
+
+  <div class="hero-demo">
+    <div class="device-frame">
+      <canvas id="pet-canvas" width="320" height="240"
+              aria-label="Live demo of the virtual pet"></canvas>
+      <div class="device-label">M5</div>
+    </div>
+    <p class="hint" id="pet-hint"
+       data-en="Try poking my forehead, cheeks or nose."
+       data-de="Tipp mich auf die Stirn, die Wangen oder die Nase.">Try poking my forehead, cheeks or nose.</p>
+  </div>
+</section>
+
+<section id="pets" class="section">
+  <h2 data-en="Three pets, one accessory" data-de="Drei Pets, ein Zubehör">Three pets, one accessory</h2>
+  <p class="section-lead"
+     data-en="Same source tree. Pick the pet that matches your hardware — and optionally add a Pip as a pocket-sized companion device that pairs with any of them."
+     data-de="Derselbe Quelltext. Wähle das Pet, das zu deiner Hardware passt — und packe optional einen Pip als Hosentaschen-Begleitgerät dazu, der sich mit jedem von ihnen koppelt.">
+    Same source tree. Pick the pet that matches your hardware — and optionally add a Pip as a pocket-sized companion device that pairs with any of them.</p>
+
+  <div class="pet-cards">
+    <article class="pet-card pet-card-flagship" data-pet="muffin">
+      <span class="flagship-ribbon"
+            data-en="★ Flagship" data-de="★ Flaggschiff">★ Flagship</span>
+      <canvas width="180" height="135" data-pet-canvas="muffin"></canvas>
+      <h3>Muffin</h3>
+      <p class="hardware">M5Stack CoreS3 + Module-LLM</p>
+      <ul class="pet-features"
+          data-en-items="Listens to its name + offline AI|Front camera + selfies|Web radio|Touch UI"
+          data-de-items="Hört auf seinen Namen + Offline-KI|Frontkamera + Selfies|Webradio|Touch-UI">
+        <li>Listens to its name + offline AI</li>
+        <li>Front camera + selfies</li>
+        <li>Web radio</li>
+        <li>Touch UI</li>
+      </ul>
+    </article>
+
+    <article class="pet-card" data-pet="visu">
+      <canvas width="180" height="135" data-pet-canvas="visu"></canvas>
+      <h3>Visu</h3>
+      <p class="hardware">M5Stack CoreS3 (no module)</p>
+      <ul class="pet-features"
+          data-en-items="Front camera + selfies|Web radio|Touch UI|Same hardware as Muffin, no LLM module"
+          data-de-items="Frontkamera + Selfies|Webradio|Touch-UI|Wie Muffin, aber ohne LLM-Modul">
+        <li>Front camera + selfies</li>
+        <li>Web radio</li>
+        <li>Touch UI</li>
+        <li>Same hardware as Muffin, no LLM module</li>
+      </ul>
+    </article>
+
+    <article class="pet-card" data-pet="goo-goo">
+      <canvas width="180" height="135" data-pet-canvas="goo-goo"></canvas>
+      <h3>Goo-Goo</h3>
+      <p class="hardware">M5Stack Core2</p>
+      <ul class="pet-features"
+          data-en-items="Hard buttons (BtnA/B/C)|Web radio|Touch UI|Most affordable variant"
+          data-de-items="Physische Buttons (BtnA/B/C)|Webradio|Touch-UI|Günstigste Variante">
+        <li>Hard buttons (BtnA/B/C)</li>
+        <li>Web radio</li>
+        <li>Touch UI</li>
+        <li>Most affordable variant</li>
+      </ul>
+    </article>
+
+    <article class="pet-card pet-card-accessory" data-pet="pip">
+      <span class="accessory-ribbon"
+            data-en="Accessory" data-de="Zubehör">Accessory</span>
+      <canvas width="76" height="135" data-pet-canvas="pip"></canvas>
+      <h3>Pip</h3>
+      <p class="hardware">M5StickC PLUS2</p>
+      <ul class="pet-features"
+          data-en-items="Pocket companion for any of the three pets|Pick a treat (Apple / Carrot / Bone) with BtnA|Wrist-flick throws it via ESP-NOW|Home pet eats it within ~200 ms"
+          data-de-items="Hosentaschen-Begleiter für jedes der drei Pets|Geschenk wählen (Apfel / Karotte / Knochen) mit BtnA|Schütteln wirft es per ESP-NOW|Heimat-Pet schnappt es nach ~200 ms">
+        <li>Pocket companion for any of the three pets</li>
+        <li>Pick a treat (Apple / Carrot / Bone) with BtnA</li>
+        <li>Wrist-flick throws it via ESP-NOW</li>
+        <li>Home pet eats it within ~200 ms</li>
+      </ul>
+    </article>
+  </div>
+  <p class="cards-disclaimer"
+     data-en="Note: the pet illustrations above are stylised demos. The actual pet on the device looks slightly different on each variant."
+     data-de="Hinweis: Die Pet-Abbildungen oben sind stilisierte Demos. Auf den echten Geräten sieht das Pet je nach Variante etwas anders aus.">
+    Note: the pet illustrations above are stylised demos. The actual pet on the device looks slightly different on each variant.</p>
+
+  <h3 class="shopping-heading"
+      data-en="What you need to buy" data-de="Was du brauchst">What you need to buy</h3>
+  <p class="shopping-lead"
+     data-en="Pick one pet kit, plus optionally a Pip as accessory. All from the official M5Stack store; no soldering, all USB-C."
+     data-de="Wähle ein Pet-Kit, optional dazu einen Pip als Zubehör. Alles im offiziellen M5Stack-Shop; kein Löten, alles per USB-C.">
+    Pick one pet kit, plus optionally a Pip as accessory. All from the official M5Stack store; no soldering, all USB-C.</p>
+
+  <h4 class="shopping-subhead"
+      data-en="Pets — pick one" data-de="Pets — wähle eins">Pets — pick one</h4>
+  <ul class="shopping-list">
+    <li>
+      <strong>Muffin</strong> —
+      <a href="https://shop.m5stack.com/products/m5stack-cores3-esp32s3-iot-development-kit" rel="noopener">M5Stack CoreS3</a>
+      +
+      <a href="https://shop.m5stack.com/products/m5stack-llm-large-language-model-module-kit-ax630c" rel="noopener">Module LLM (AX630C)</a>
+      +
+      <a href="https://shop.m5stack.com/products/battery-module-13-2-1500mah" rel="noopener">Battery Module 13.2</a>
+      <span class="shopping-note"
+            data-en="(the LLM module is sold separately from the battery; you need both. Battery 13.2 = 1500 mAh, fits under the CoreS3 stack)"
+            data-de="(das LLM-Modul wird ohne Akku verkauft; beides wird gebraucht. Battery 13.2 = 1500 mAh, passt unten unter den CoreS3-Stack)">(the LLM module is sold separately from the battery; you need both. Battery 13.2 = 1500 mAh, fits under the CoreS3 stack)</span>
+    </li>
+    <li>
+      <strong>Visu</strong> —
+      <a href="https://shop.m5stack.com/products/m5stack-cores3-esp32s3-iot-development-kit" rel="noopener">M5Stack CoreS3</a>
+      +
+      <a href="https://shop.m5stack.com/products/m5go-battery-bottom3-for-cores3-only" rel="noopener">M5GO Battery Bottom3</a>
+      <span class="shopping-note"
+            data-en="(500 mAh, the official CoreS3 battery base)"
+            data-de="(500 mAh, der offizielle CoreS3-Akkuboden)">(500 mAh, the official CoreS3 battery base)</span>
+    </li>
+    <li>
+      <strong>Goo-Goo</strong> —
+      <a href="https://shop.m5stack.com/products/m5stack-core2-esp32-iot-development-kit-v1-1" rel="noopener">M5Stack Core2</a>
+      <span class="shopping-note"
+            data-en="(500 mAh battery built in, nothing else needed)"
+            data-de="(Akku 500 mAh ist eingebaut, sonst nichts)">(500 mAh battery built in, nothing else needed)</span>
+    </li>
+  </ul>
+
+  <h4 class="shopping-subhead"
+      data-en="Accessory — optional" data-de="Zubehör — optional">Accessory — optional</h4>
+  <ul class="shopping-list">
+    <li>
+      <strong>Pip</strong> —
+      <a href="https://shop.m5stack.com/products/m5stickc-plus2-esp32-mini-iot-development-kit" rel="noopener">M5StickC PLUS2</a>
+      <span class="shopping-note"
+            data-en="(200 mAh battery built in, pocket-sized; pairs with any of the three pets above)"
+            data-de="(Akku 200 mAh eingebaut, hosentaschentauglich; koppelt mit jedem der drei Pets oben)">(200 mAh battery built in, pocket-sized; pairs with any of the three pets above)</span>
+    </li>
+  </ul>
+</section>
+
+<section id="features" class="section section-alt">
+  <h2 data-en="What it does" data-de="Was es kann">What it does</h2>
+
+  <div class="feature-grid">
+    <div class="feature">
+      <div class="feature-icon">😊</div>
+      <h3 data-en="Eleven moods" data-de="Elf Stimmungen">Eleven moods</h3>
+      <p class="feature-tag"
+         data-en="Pip: 5 basics" data-de="Pip: 5 Basismimiken">Pip: 5 basics</p>
+      <p data-en="Idle, happy, excited, in love, sleepy, asleep, sad, startled, laughing, eating, speaking — driven by needs and interaction. Pip has the basic five (idle / happy / excited / sleeping / startled)."
+         data-de="Idle, glücklich, aufgeregt, verliebt, müde, schlafend, traurig, erschrocken, lachend, essend, sprechend — abgeleitet aus Bedürfnissen und Interaktion. Pip hat die fünf Basismimiken (idle / happy / excited / schlafen / erschrocken).">
+        Idle, happy, excited, in love, sleepy, asleep, sad, startled, laughing, eating, speaking — driven by needs and interaction. Pip has the basic five (idle / happy / excited / sleeping / startled).</p>
+    </div>
+
+    <div class="feature feature-flagship">
+      <div class="feature-icon">🗣️</div>
+      <h3 data-en="Voice control" data-de="Sprachsteuerung">Voice control</h3>
+      <p class="feature-tag"
+         data-en="Muffin only" data-de="nur Muffin">Muffin only</p>
+      <p data-en="Muffin listens for its own name. Call “Muffin!”, then tell it what to do — “eat something”, “let’s play”, “go to sleep”, “turn on the radio”, “let’s dance”. The pet understands plain sentences and triggers the matching action. Everything runs offline on a small built-in AI: speech-to-text by Whisper, intent classification by Qwen3-0.6B, both on the Module-LLM expansion. No cloud, no microphone leaving the device."
+         data-de="Muffin hört auf seinen eigenen Namen. Ruf „Muffin!“ und sag dann, was es tun soll — „iss etwas“, „lass uns spielen“, „geh schlafen“, „mach das Radio an“, „lass uns tanzen“. Das Pet versteht ganze Sätze und löst die passende Aktion aus. Alles läuft offline auf einer kleinen eingebauten KI: Sprache-zu-Text via Whisper, Bedeutungs-Erkennung via Qwen3-0.6B, beides auf dem Module-LLM-Aufsatz. Keine Cloud, kein Mikrofon-Stream verlässt das Gerät.">
+        Muffin listens for its own name. Call “Muffin!”, then tell it what to do — “eat something”, “let’s play”, “go to sleep”, “turn on the radio”, “let’s dance”. The pet understands plain sentences and triggers the matching action. Everything runs offline on a small built-in AI: speech-to-text by Whisper, intent classification by Qwen3-0.6B, both on the Module-LLM expansion. No cloud, no microphone leaving the device.</p>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon">🎤</div>
+      <h3 data-en="Singing + applause" data-de="Singen + Applaus">Singing + applause</h3>
+      <p class="feature-tag"
+         data-en="All pets" data-de="alle Pets">All pets</p>
+      <p data-en="Tilt the device upright, then left and right within five seconds — the pet bursts into song for eight seconds, then opens its ear and listens for applause. Loud clapping rewards a happy reaction; silence gets a small disappointment. The pet uses its built-in microphone to measure peak loudness."
+         data-de="Tipp das Gerät kurz hochkant, dann nach links, dann nach rechts — innerhalb von fünf Sekunden. Das Pet legt acht Sekunden lang los und singt, danach hört es fünf Sekunden lang auf Applaus. Lautes Klatschen wird mit einer Happy-Reaktion belohnt, Schweigen bringt eine kleine Enttäuschung. Das Pet nutzt sein eingebautes Mikrofon, um den Peak-Pegel zu messen.">
+        Tilt the device upright, then left and right within five seconds — the pet bursts into song for eight seconds, then opens its ear and listens for applause. Loud clapping rewards a happy reaction; silence gets a small disappointment. The pet uses its built-in microphone to measure peak loudness.</p>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon">👀</div>
+      <h3 data-en="Proximity wake-up" data-de="Annäherungs-Erkennung">Proximity wake-up</h3>
+      <p class="feature-tag"
+         data-en="Muffin / Visu only" data-de="nur Muffin / Visu">Muffin / Visu only</p>
+      <p data-en="The front camera runs a lightweight skin-tone detector. When you walk past or lean in, the pet greets you with a happy face and a chirpy sound — once per cooldown so it doesn't get annoying. The detector goes silent while the pet is sleeping, listening for voice or playing radio."
+         data-de="Die Frontkamera läuft mit einem leichtgewichtigen Hauttonfilter. Wenn du vorbeigehst oder dich näherst, begrüßt dich das Pet mit einem fröhlichen Gesicht und einem kleinen Laut — pro Cooldown nur einmal, sonst wird's nervig. Der Detektor schweigt, wenn das Pet schläft, sprachhört oder Radio spielt.">
+        The front camera runs a lightweight skin-tone detector. When you walk past or lean in, the pet greets you with a happy face and a chirpy sound — once per cooldown so it doesn't get annoying. The detector goes silent while the pet is sleeping, listening for voice or playing radio.</p>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon">📷</div>
+      <h3 data-en="Selfies + gallery" data-de="Selfies + Galerie">Selfies + gallery</h3>
+      <p class="feature-tag"
+         data-en="Muffin / Visu only" data-de="nur Muffin / Visu">Muffin / Visu only</p>
+      <p data-en="Open the camera in the media menu, the pet shows up in the bottom-left corner of the live preview. Tap the round shutter button on the right edge to capture; the gallery shows up to five photos as a thumbnail grid, tap a thumb to view it big with the pet alongside."
+         data-de="Kamera im Medien-Menü öffnen, das Pet erscheint unten links im Live-Bild. Runder Auslöser-Button am rechten Rand schießt das Foto; die Galerie zeigt bis zu fünf Fotos als Thumbnail-Grid, Tap auf ein Thumb öffnet das Bild groß mit Pet daneben.">
+        Open the camera in the media menu, the pet shows up in the bottom-left corner of the live preview. Tap the round shutter button on the right edge to capture; the gallery shows up to five photos as a thumbnail grid, tap a thumb to view it big with the pet alongside.</p>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon">📻</div>
+      <h3 data-en="Kid-friendly web radio" data-de="Kinder-Webradio">Kid-friendly web radio</h3>
+      <p class="feature-tag"
+         data-en="Muffin / Visu / Goo-Goo" data-de="Muffin / Visu / Goo-Goo">Muffin / Visu / Goo-Goo</p>
+      <p data-en="WDR Die Maus on German, Fun Kids UK on English. The pet sways to the music with little notes drifting up. No tracking; the stations are public broadcasters."
+         data-de="WDR Die Maus auf Deutsch, Fun Kids UK auf Englisch. Das Pet wiegt sich zur Musik, kleine Noten steigen auf. Kein Tracking; beide Sender sind öffentlich-rechtlich.">
+        WDR Die Maus on German, Fun Kids UK on English. The pet sways to the music with little notes drifting up. No tracking; the stations are public broadcasters.</p>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon">🤝</div>
+      <h3 data-en="Pet friendships" data-de="Pet-Freundschaften">Pet friendships</h3>
+      <p class="feature-tag"
+         data-en="Muffin / Visu / Goo-Goo" data-de="Muffin / Visu / Goo-Goo">Muffin / Visu / Goo-Goo</p>
+      <p data-en="Two pets in radio range can swap gifts, hearts, food and toys via ESP-NOW. Both kids tap a big “Verabreden” button at the same time to pair up, then the four send buttons appear. No internet, no accounts."
+         data-de="Zwei Pets in Funkreichweite tauschen Geschenke, Herzen, Futter und Spielzeug per ESP-NOW. Beide Kinder tippen gleichzeitig auf einen großen „Verabreden“-Button um zu pairen, danach erscheinen die vier Send-Buttons. Kein Internet, keine Accounts.">
+        Two pets in radio range can swap gifts, hearts, food and toys via ESP-NOW. Both kids tap a big “Verabreden” button at the same time to pair up, then the four send buttons appear. No internet, no accounts.</p>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon">🎮</div>
+      <h3 data-en="Mini-games" data-de="Mini-Spiele">Mini-games</h3>
+      <p class="feature-tag"
+         data-en="Muffin / Visu / Goo-Goo" data-de="Muffin / Visu / Goo-Goo">Muffin / Visu / Goo-Goo</p>
+      <p data-en="Sport mode (squats, jumps, yoga via IMU), foraging for food, toy play with five toys, scene travel between bedroom, meadow, forest, beach, city, desert and space — each scene with its own activity."
+         data-de="Sport (Squats, Jumps, Yoga per IMU), Sammeln von Apfel/Karotte/Knochen, Spielzeug-Modus mit fünf Items, Reisen zwischen Zimmer, Wiese, Wald, Strand, Stadt, Wüste und All — jede Szene mit eigener Aktivität.">
+        Sport mode (squats, jumps, yoga via IMU), foraging for food, toy play with five toys, scene travel between bedroom, meadow, forest, beach, city, desert and space — each scene with its own activity.</p>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon">🌤️</div>
+      <h3 data-en="Real weather + moon" data-de="Echtes Wetter + Mond">Real weather + moon</h3>
+      <p class="feature-tag"
+         data-en="Muffin / Visu / Goo-Goo" data-de="Muffin / Visu / Goo-Goo">Muffin / Visu / Goo-Goo</p>
+      <p data-en="The bedroom window mirrors your local weather and the night scene shows the actual moon phase. Location is resolved once via IP, then cached for a day."
+         data-de="Das Zimmerfenster spiegelt das lokale Wetter, die Nachtszene zeigt die echte Mondphase. Standort wird einmal per IP ermittelt und einen Tag lang gecacht.">
+        The bedroom window mirrors your local weather and the night scene shows the actual moon phase. Location is resolved once via IP, then cached for a day.</p>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon">⏰</div>
+      <h3 data-en="Parental session limit" data-de="Eltern-Spielzeit-Limit">Parental session limit</h3>
+      <p class="feature-tag"
+         data-en="Muffin / Visu / Goo-Goo" data-de="Muffin / Visu / Goo-Goo">Muffin / Visu / Goo-Goo</p>
+      <p data-en="Defaults to 30 minutes per power-on, configurable 5–120 minutes via a parent web page. After the limit the pet plays a bedtime animation and shuts down with a 30-minute lockout."
+         data-de="Standardmäßig 30 Minuten pro Boot, einstellbar 5–120 Minuten via Eltern-Webseite. Nach Ablauf spielt das Pet eine Schlaf-Sequenz und fährt für 30 Minuten in eine Sperre.">
+        Defaults to 30 minutes per power-on, configurable 5–120 minutes via a parent web page. After the limit the pet plays a bedtime animation and shuts down with a 30-minute lockout.</p>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon">🎁</div>
+      <h3 data-en="Treat thrower (Pip → home pet)"
+          data-de="Geschenk-Werfer (Pip → Heimat-Pet)">Treat thrower (Pip → home pet)</h3>
+      <p class="feature-tag"
+         data-en="Pip + Muffin / Visu / Goo-Goo"
+         data-de="Pip + Muffin / Visu / Goo-Goo">Pip + Muffin / Visu / Goo-Goo</p>
+      <p data-en="Pip cycles through five pages with BtnA: an empty “pick one” safe-carry page (shaking does nothing), Apple / Carrot / Bone (each is a treat), and Tricks (gesture mode, see next card). On a treat page a wrist-flick fires a 3-packet ESP-NOW broadcast; within ~200 ms the home pet eats it: Eating face, Eat sound, +5 happiness and +8 fullness. Works over ESP-NOW long-range PHY, no router needed. Toggle “Pip mode” in Settings (page 4) on the home pet to enable the listener — opt-in because the always-on radio costs ~20 % runtime. Pip itself stays radio-off until each shake, so its 200 mAh battery is essentially unaffected."
+         data-de="Pip blättert mit BtnA durch fünf Seiten: ein leeres „Wähle aus" (Schütteln macht nichts, Pocket-Mode), Apfel / Karotte / Knochen (je ein Geschenk), Tricks (Gesten-Modus, siehe nächste Karte). Auf einer Geschenk-Seite wirft ein Wrist-Flick per 3-Burst per ESP-NOW; nach ~200 ms isst das Heimat-Pet: Eating-Mimik, Eat-Sound, +5 Happiness, +8 Sättigung. Läuft per ESP-NOW Long-Range, kein Router nötig. „Pip-Modus" in den Einstellungen (Seite 4) am Heimat-Pet einschalten — Opt-in, weil der Dauer-Empfänger ~20 % Akkulaufzeit kostet. Pip selbst bleibt funkfrei bis zum Schüttler, sein 200-mAh-Akku ist praktisch unbeeindruckt.">
+        Pip cycles through five pages with BtnA: an empty “pick one” safe-carry page (shaking does nothing), Apple / Carrot / Bone (each is a treat), and Tricks (gesture mode, see next card). On a treat page a wrist-flick fires a 3-packet ESP-NOW broadcast; within ~200 ms the home pet eats it: Eating face, Eat sound, +5 happiness and +8 fullness. Works over ESP-NOW long-range PHY, no router needed. Toggle “Pip mode” in Settings (page 4) on the home pet to enable the listener — opt-in because the always-on radio costs ~20 % runtime. Pip itself stays radio-off until each shake, so its 200 mAh battery is essentially unaffected.</p>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon">✨</div>
+      <h3 data-en="Tricks (Pip → home pet)"
+          data-de="Tricks (Pip → Heimat-Pet)">Tricks (Pip → home pet)</h3>
+      <p class="feature-tag"
+         data-en="Pip + Muffin / Visu / Goo-Goo"
+         data-de="Pip + Muffin / Visu / Goo-Goo">Pip + Muffin / Visu / Goo-Goo</p>
+      <p data-en="On the Tricks page each up-or-down flick of Pip increments a peak counter live on screen. After ~900 ms of stillness Pip dispatches the count to the home pet, which then visibly hops that many times in a row — laughing face on each hop, a giggle sound, a heart float per landing, +2 happiness per hop. So 3 vigorous flicks → 3 hops, 5 flicks → 5 hops, capped at 9. The kid is teaching the pet a quick trick. Same shake detector as the treat thrower, just routed differently."
+         data-de="Auf der Tricks-Seite zählt jede Auf-oder-Ab-Bewegung von Pip live einen Peak-Zähler hoch. Nach ~900 ms Stillstand schickt Pip die Anzahl ans Heimat-Pet, das daraufhin sichtbar genau so oft hintereinander hüpft — Lach-Mimik bei jedem Hop, ein Kicher-Sound, ein Herz-Floater pro Landung, +2 Happiness pro Hop. Also 3 kräftige Flicks → 3 Hops, 5 Flicks → 5 Hops, gedeckelt bei 9. Das Kind bringt dem Pet einen schnellen Trick bei. Selbe Schüttel-Erkennung wie der Geschenk-Werfer, nur anders weitergeleitet.">
+        On the Tricks page each up-or-down flick of Pip increments a peak counter live on screen. After ~900 ms of stillness Pip dispatches the count to the home pet, which then visibly hops that many times in a row — laughing face on each hop, a giggle sound, a heart float per landing, +2 happiness per hop. So 3 vigorous flicks → 3 hops, 5 flicks → 5 hops, capped at 9. The kid is teaching the pet a quick trick. Same shake detector as the treat thrower, just routed differently.</p>
+    </div>
+  </div>
+</section>
+
+<section id="ai-built" class="section">
+  <h2 data-en="100&nbsp;% AI-coded" data-de="Zu 100&nbsp;% mit KI programmiert">100&nbsp;% AI-coded</h2>
+  <p class="section-lead"
+     data-en="Every line of firmware in this project was written by AI assistants — Claude (Anthropic) and the GitHub Copilot family — under human direction. Justus and Marcel did the concept work, design decisions, hardware testing and the kid-experience tuning; the AI did the typing. Open the commit log: every commit is co-authored with the model that wrote it."
+     data-de="Jede Zeile Firmware in diesem Projekt wurde von KI-Assistenten geschrieben — Claude (Anthropic) und die GitHub-Copilot-Familie — unter menschlicher Anleitung. Justus und Marcel haben Konzept, Design-Entscheidungen, Hardware-Tests und das Kinder-Tuning beigesteuert; die KI hat getippt. Im Commit-Log ist jeder Commit mit dem Modell co-authored, das ihn geschrieben hat.">
+    Every line of firmware in this project was written by AI assistants — Claude (Anthropic) and the GitHub Copilot family — under human direction. Justus and Marcel did the concept work, design decisions, hardware testing and the kid-experience tuning; the AI did the typing. Open the commit log: every commit is co-authored with the model that wrote it.</p>
+</section>
+
+<section id="parents" class="section section-alt">
+  <h2 data-en="For parents" data-de="Für Eltern">For parents</h2>
+
+  <div class="parents-grid">
+    <div class="parent-point">
+      <h3 data-en="No cloud, no account" data-de="Keine Cloud, kein Account">No cloud, no account</h3>
+      <p data-en="Everything runs on the device. The only network calls are an optional weather lookup and the kid-friendly web radio stream — both you can turn off."
+         data-de="Alles läuft auf dem Gerät. Die einzigen Netzwerk-Aufrufe sind eine optionale Wetter-Abfrage und der Kinder-Webradio-Stream — beides abschaltbar.">
+        Everything runs on the device. The only network calls are an optional weather lookup and the kid-friendly web radio stream — both you can turn off.</p>
+    </div>
+
+    <div class="parent-point">
+      <h3 data-en="Open source, you can read it" data-de="Open Source — alles einsehbar">Open source, you can read it</h3>
+      <p data-en="MIT-licensed firmware on GitHub. Every interaction the pet has is in the source. No hidden behaviour, no telemetry."
+         data-de="MIT-lizenzierte Firmware auf GitHub. Jede Interaktion des Pets steht im Quellcode. Keine versteckten Funktionen, keine Telemetrie.">
+        MIT-licensed firmware on GitHub. Every interaction the pet has is in the source. No hidden behaviour, no telemetry.</p>
+    </div>
+
+    <div class="parent-point">
+      <h3 data-en="Built-in time limit" data-de="Eingebautes Zeitlimit">Built-in time limit</h3>
+      <p data-en="The pet decides when bedtime is. After the configured session length, it plays a sleep animation and shuts down — even if your kid wants “five more minutes”."
+         data-de="Das Pet entscheidet über die Schlafenszeit. Nach der eingestellten Spielzeit spielt es eine Schlaf-Animation und schaltet sich ab — auch wenn das Kind „nur noch fünf Minuten“ möchte.">
+        The pet decides when bedtime is. After the configured session length, it plays a sleep animation and shuts down — even if your kid wants “five more minutes”.</p>
+    </div>
+
+    <div class="parent-point">
+      <h3 data-en="Quiet by default" data-de="Standardmäßig leise">Quiet by default</h3>
+      <p data-en="Volume and brightness are configurable. The pet babbles softly when idle but never shouts; the wake-up sounds are short pet noises, not human speech."
+         data-de="Lautstärke und Helligkeit sind einstellbar. Das Pet brabbelt leise im Idle, schreit aber nie; die Aufwach-Sounds sind kurze Tier-Laute, kein gesprochenes Wort.">
+        Volume and brightness are configurable. The pet babbles softly when idle but never shouts; the wake-up sounds are short pet noises, not human speech.</p>
+    </div>
+  </div>
+</section>
+
+<section id="getstarted" class="section section-alt">
+  <h2 data-en="Get started" data-de="Loslegen">Get started</h2>
+
+  <ol class="steps">
+    <li>
+      <h3 data-en="1. Pick a board" data-de="1. Board aussuchen">1. Pick a board</h3>
+      <p data-en="The most polished experience is on the M5Stack CoreS3 with the Module-LLM (Muffin). On a budget, an M5Stack Core2 (Goo-Goo) is enough. For a pocket-sized stick, get the M5StickC Plus 2 (Pip)."
+         data-de="Das vollständigste Erlebnis liefert der M5Stack CoreS3 mit dem Module-LLM (Muffin). Günstiger geht's mit dem M5Stack Core2 (Goo-Goo). Mobil im Hosentaschen-Format: M5StickC Plus 2 (Pip).">
+        The most polished experience is on the M5Stack CoreS3 with the Module-LLM (Muffin). On a budget, an M5Stack Core2 (Goo-Goo) is enough. For a pocket-sized stick, get the M5StickC Plus 2 (Pip).</p>
+    </li>
+    <li>
+      <h3 data-en="2. Clone the repo" data-de="2. Repo clonen">2. Clone the repo</h3>
+<pre><code>git clone https://github.com/duetscher/pixel-pets.git
+cd pixel-pets</code></pre>
+    </li>
+    <li>
+      <h3 data-en="3. Install PlatformIO" data-de="3. PlatformIO installieren">3. Install PlatformIO</h3>
+      <p data-en="Either as a VSCode extension or as a CLI:"
+         data-de="Entweder als VSCode-Extension oder als CLI:">Either as a VSCode extension or as a CLI:</p>
+<pre><code>pip install platformio</code></pre>
+    </li>
+    <li>
+      <h3 data-en="4. Build and flash" data-de="4. Bauen und flashen">4. Build and flash</h3>
+<pre><code>pio run -e cores3 -t upload         # Muffin (CoreS3 + Module-LLM)
+pio run -e visu   -t upload         # Visu   (CoreS3 alone)
+pio run -e core2  -t upload         # Goo-Goo (Core2)
+pio run -e pip    -t upload         # Pip    (StickC Plus 2)</code></pre>
+      <p data-en="Detailed hardware notes (COM-port quirks, Module-LLM ADB workflow, Qwen3 pitfalls) are in the docs:"
+         data-de="Ausführliche Hardware-Hinweise (COM-Port-Quirks, Module-LLM-ADB-Workflow, Qwen3-Stolpersteine) stehen in der Doku:">
+        Detailed hardware notes (COM-port quirks, Module-LLM ADB workflow, Qwen3 pitfalls) are in the docs:</p>
+      <p>
+        <a href="https://github.com/duetscher/pixel-pets/blob/main/docs/hardware.md">docs/hardware.md</a> ·
+        <a href="https://github.com/duetscher/pixel-pets/blob/main/docs/architecture.md">architecture.md</a> ·
+        <a href="https://github.com/duetscher/pixel-pets/blob/main/docs/concept.md">concept.md</a>
+      </p>
+    </li>
+  </ol>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <p>
+    <span data-en="Designed by" data-de="Design">Designed by</span>
+    <strong>Justus &amp; Marcel</strong>
+    ·
+    <span data-en="Coded by AI assistants (Claude, Copilot)"
+          data-de="Code von KI-Assistenten (Claude, Copilot)">Coded by AI assistants (Claude, Copilot)</span>
+    · <a href="https://github.com/duetscher/pixel-pets">GitHub</a>
+    · <a href="https://github.com/duetscher/pixel-pets/blob/main/LICENSE">MIT</a>
+    · <a href="privacy.html"
+         data-en="Privacy" data-de="Datenschutz">Privacy</a>
+  </p>
+  <p class="footer-fineprint"
+     data-en="No tracking, no cookies, no analytics. This page runs on GitHub Pages."
+     data-de="Kein Tracking, keine Cookies, keine Analytics. Diese Seite läuft auf GitHub Pages.">
+    No tracking, no cookies, no analytics. This page runs on GitHub Pages.</p>
+  <p class="footer-fineprint"
+     data-en="Note: this is an independent open-source project and is not affiliated with M5Stack. M5Stack is a trademark of its respective owner. Links to M5Stack are provided for technical documentation and sourcing information only. No affiliate links, no paid partnership."
+     data-de="Hinweis: Dieses Projekt ist ein unabhängiges Open-Source-Projekt und steht nicht in Verbindung mit M5Stack. M5Stack ist eine Marke des jeweiligen Rechteinhabers. Links zu M5Stack dienen der technischen Dokumentation und Bezugsinformation. Es bestehen keine Affiliate-Links und keine bezahlte Kooperation.">
+    Note: this is an independent open-source project and is not affiliated with M5Stack. M5Stack is a trademark of its respective owner. Links to M5Stack are provided for technical documentation and sourcing information only. No affiliate links, no paid partnership.</p>
+</footer>
+
+<script src="scripts/i18n.js"></script>
+<script src="scripts/sound.js"></script>
+<script src="scripts/pet.js"></script>
+<script src="scripts/interaction.js"></script>
+<script src="scripts/cards.js"></script>
+<script src="scripts/main.js"></script>
+</body>
+</html>

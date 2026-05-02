@@ -1,0 +1,56 @@
+MIT License
+
+Copyright (c) 2026 Justus and Marcel Duetscher
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+================================================================================
+THIRD-PARTY LICENSES
+================================================================================
+
+The Muffin / Goo-Goo / Visu / Pip firmware links against several third-party
+libraries with their own license terms. The MIT terms above apply ONLY to the
+source code in this repository. Binaries distributed by downstream users may
+be subject to additional license obligations from these dependencies:
+
+  Library                   | License        | Notes
+  --------------------------|----------------|------------------------------
+  m5stack/M5Unified         | MIT            | hardware abstraction
+  m5stack/M5GFX             | MIT            | display library (via M5Unified)
+  m5stack/M5Module-LLM      | MIT            | LLM module bridge (cores3 only)
+  bblanchon/ArduinoJson     | MIT            | JSON parsing
+  espressif/arduino-esp32   | LGPL 2.1 + MIT | framework
+  schreibfaul1/ESP32-audioI2S | GPL v3.0    | MP3 stream decoder (web radio)
+
+The web radio feature pulls in `ESP32-audioI2S`, which is licensed under
+GPL v3.0. That is a strong copyleft license: any binary that statically
+links against it inherits the GPL v3.0 distribution terms. Concretely this
+means:
+
+  * `cores3`, `core2`, `visu` envs DO link the audio library — binaries
+    built from those envs are practical-purposes governed by GPL v3.0 when
+    redistributed.
+  * `pip` env does NOT link the audio library (no web radio on Pip) — its
+    binary can be redistributed under MIT terms only.
+  * The source code in this repository remains MIT regardless of which env
+    you build.
+
+If you want a fully-MIT binary distribution and don't need web radio, drop
+`ESP32-audioI2S` from `lib_deps_wifi` in `platformio.ini` and stub out
+`webradio.cpp`.

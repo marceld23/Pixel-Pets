@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy — Pixel Pets</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <a href="index.html" class="brand"><span class="brand-mark">PIXEL PETS</span></a>
+  <nav class="site-nav">
+    <a href="index.html#pets"        data-en="Pets"        data-de="Pets">Pets</a>
+    <a href="index.html#features"    data-en="Features"    data-de="Features">Features</a>
+    <a href="index.html#parents"     data-en="For parents" data-de="Für Eltern">For parents</a>
+    <a href="index.html#getstarted"  data-en="Get started" data-de="Loslegen">Get started</a>
+  </nav>
+  <div class="header-actions">
+    <button id="lang-toggle" class="lang-toggle">EN / DE</button>
+    <a href="https://github.com/duetscher/pixel-pets" class="btn btn-ghost">GitHub</a>
+  </div>
+</header>
+
+<main class="privacy-page">
+  <h1 data-en="Privacy" data-de="Datenschutz">Privacy</h1>
+
+  <p data-en="This page is hosted on GitHub Pages. We do not run any analytics, ad networks, or tracking beacons. No cookies are set by the site itself."
+     data-de="Diese Seite läuft auf GitHub Pages. Wir betreiben keine Analytics, keine Werbenetzwerke und keine Tracking-Pixel. Die Seite selbst setzt keine Cookies.">
+    This page is hosted on GitHub Pages. We do not run any analytics, ad networks, or tracking beacons. No cookies are set by the site itself.</p>
+
+  <h2 data-en="What the page stores locally" data-de="Was lokal gespeichert wird">What the page stores locally</h2>
+  <p data-en="One key in your browser's localStorage:"
+     data-de="Ein Eintrag im localStorage deines Browsers:">
+    One key in your browser's localStorage:</p>
+  <ul>
+    <li><code>lang</code>
+      — <span data-en="your preferred UI language (en / de) so the toggle survives reloads"
+              data-de="deine UI-Sprache (en / de), damit der Toggle Seiten-Reloads überlebt">your preferred UI language</span>.</li>
+    <li><code>petsound-muted</code>
+      — <span data-en="whether the demo pet's sounds are muted"
+              data-de="ob die Demo-Pet-Sounds stumm geschaltet sind">whether the demo pet's sounds are muted</span>.</li>
+  </ul>
+  <p data-en="Both can be cleared from your browser at any time; the page will simply pick its defaults again on the next visit."
+     data-de="Beide kannst du jederzeit im Browser löschen; die Seite wählt dann beim nächsten Besuch wieder ihre Default-Werte.">
+    Both can be cleared from your browser at any time; the page will simply pick its defaults again on the next visit.</p>
+
+  <h2 data-en="What GitHub Pages logs" data-de="Was GitHub Pages protokolliert">What GitHub Pages logs</h2>
+  <p data-en="GitHub Pages records HTTP request metadata (IP address, user agent, timestamp) for abuse-prevention purposes. We do not have access to that data ourselves. For details see GitHub's privacy statement at "
+     data-de="GitHub Pages protokolliert HTTP-Request-Metadaten (IP-Adresse, User-Agent, Zeitstempel) zum Zweck der Missbrauchsprävention. Wir selbst haben darauf keinen Zugriff. Details in GitHubs Datenschutzerklärung: ">
+    GitHub Pages records HTTP request metadata (IP address, user agent, timestamp) for abuse-prevention purposes. We do not have access to that data ourselves. For details see GitHub's privacy statement at </p>
+  <p><a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">docs.github.com/site-policy/privacy</a>.</p>
+
+  <h2 data-en="What the firmware does" data-de="Was die Firmware macht">What the firmware does</h2>
+  <p data-en="The firmware (the actual virtual pet that runs on M5Stack hardware) is open source under the MIT license. It optionally fetches your approximate location from ip-api.com and weather data from open-meteo.com so the bedroom window mirrors your local weather. It optionally streams audio from public broadcasters (WDR Die Maus, Fun Kids UK) when web radio is active. No accounts, no telemetry, no upload of any user data. All those features can be turned off."
+     data-de="Die Firmware (das eigentliche virtuelle Pet auf der M5Stack-Hardware) ist Open Source unter MIT-Lizenz. Sie holt optional deinen ungefähren Standort von ip-api.com und Wetterdaten von open-meteo.com, damit das Schlafzimmer-Fenster das lokale Wetter zeigt. Sie streamt optional Audio öffentlich-rechtlicher Sender (WDR Die Maus, Fun Kids UK), wenn das Webradio läuft. Keine Accounts, keine Telemetrie, keine Datenübertragung an uns. All diese Funktionen lassen sich abschalten.">
+    The firmware (the actual virtual pet that runs on M5Stack hardware) is open source under the MIT license. It optionally fetches your approximate location from ip-api.com and weather data from open-meteo.com so the bedroom window mirrors your local weather. It optionally streams audio from public broadcasters (WDR Die Maus, Fun Kids UK) when web radio is active. No accounts, no telemetry, no upload of any user data. All those features can be turned off.</p>
+
+  <h2 data-en="Contact" data-de="Kontakt">Contact</h2>
+  <p data-en="Questions or concerns: open an issue on "
+     data-de="Fragen oder Anliegen: Issue im ">
+    Questions or concerns: open an issue on </p>
+  <p><a href="https://github.com/duetscher/pixel-pets/issues">GitHub</a>.</p>
+
+  <p style="margin-top: 32px;">
+    <a href="index.html"
+       data-en="← Back to the pets" data-de="← Zurück zu den Pets">← Back to the pets</a>
+  </p>
+</main>
+
+<footer class="site-footer">
+  <p>
+    <span data-en="Made by" data-de="Von">Made by</span>
+    <strong>Justus &amp; Marcel</strong>
+    · <a href="https://github.com/duetscher/pixel-pets">GitHub</a>
+    · <a href="https://github.com/duetscher/pixel-pets/blob/main/LICENSE">MIT</a>
+  </p>
+</footer>
+
+<script src="scripts/i18n.js"></script>
+</body>
+</html>
