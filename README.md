@@ -4,6 +4,15 @@
 
 # Pixel Pets
 
+<p align="center">
+  <a href="docs/concept.md">Concept</a> ·
+  <a href="docs/architecture.md">Architecture</a> ·
+  <a href="docs/hardware.md">Hardware</a> ·
+  <a href="docs/sound_assets.md">Sound assets</a> ·
+  <a href="CREDITS.md">Credits</a> ·
+  <a href="LICENSE">License</a>
+</p>
+
 **Version 1.0.0** — first stable release. See [Version history](#version-history) at the bottom for the rough scope.
 
 A family of virtual pets on M5Stack hardware. **Three pet variants** — **Muffin** (CoreS3 + LLM), **Visu** (CoreS3 alone), **Goo-Goo** (Core2) — plus one optional **accessory**, **Pip** (M5StickC PLUS2), which acts as a pocket-sized companion device for any of the bigger pets. One source tree, five build envs (`cores3` / `visu` / `core2` / `pip` / `pip-s3`). Pet logic, animations, mini-games, ESP-NOW friends and weather/location are target-agnostic; voice and the front camera are CoreS3-only.
