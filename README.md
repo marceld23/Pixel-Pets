@@ -17,6 +17,11 @@ A family of virtual pets on M5Stack hardware. **Three pet variants** — **Muffi
 
 **Version 1.0.0** — first stable release. See [Version history](#version-history) at the bottom for the rough scope.
 
+<p align="center">
+  <img src="assets/photos/photo_pets.jpg" alt="Pixel Pets family — Muffin, two Goo-Goos and a Pip" width="640"><br>
+  <em>The whole family on the desk: Muffin showing the dog pet, two Goo-Goos showing the bear and cat, with a Pip on the Tricks page in front.</em>
+</p>
+
 ## Pick your pet animal
 
 Each device renders the same set of animals — **Bear, Cat, Dog** — chosen on first boot (and changeable later in Settings). Real screenshots from a Goo-Goo (Core2):
@@ -24,6 +29,11 @@ Each device renders the same set of animals — **Bear, Cat, Dog** — chosen on
 | Bear | Cat | Dog |
 |:---:|:---:|:---:|
 | ![Bear](screenshots/pet_bear.png) | ![Cat](screenshots/pet_cat.png) | ![Dog](screenshots/pet_dog.png) |
+
+<p align="center">
+  <img src="assets/photos/photo_goo-goo_bear.jpg" alt="Goo-Goo close-up showing the bear pet on a meadow scene" width="380"><br>
+  <em>Goo-Goo on a meadow scene — what the bear looks like through a phone camera.</em>
+</p>
 
 🐻 **Live demo + landing page**: <https://marceld23.github.io/Pixel-Pets/>. The site has a click-and-poke browser pet, an overview of all variants and the get-started guide. Source under [`site/`](site/), deployed via GitHub Actions on every push.
 

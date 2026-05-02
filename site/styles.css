@@ -316,6 +316,45 @@ pre code { background: none; padding: 0; color: inherit; }
   color: var(--ink);
 }
 
+/* ── Real-hardware photos (the lineup + close-up) ──────────────────────── */
+
+.hardware-photos {
+  display: grid;
+  /* Family photo (landscape) gets ~2× the width of the close-up (portrait). */
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  margin: 14px 0 32px;
+}
+
+.hardware-photos figure {
+  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+
+.hardware-photos img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+.hardware-photos figcaption {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+@media (max-width: 700px) {
+  .hardware-photos { grid-template-columns: 1fr; }
+}
+
 /* ── Pet cards ──────────────────────────────────────────────────────────── */
 
 .pet-cards {
