@@ -183,7 +183,7 @@ First stable release. Three pet variants and one accessory, all verified end-to-
 
 **Other lanes that grew along the way:**
 
-- All source-code comments translated to English ([`f84b940`](https://github.com/duetscher/pixel-pets/commit/f84b940))
+- All source-code comments translated to English ([`f84b940`](https://github.com/marceld23/Pixel-Pets/commit/f84b940))
 - [`AGENTS.md`](AGENTS.md) — drop-in context file for AI coding agents working on the repo
 - GitHub Pages site rebuilt around "three pets + one accessory" framing, click-and-poke browser pet, hardware shopping list
 - CI matrix builds all 5 envs on every push; native unit tests for the pure-logic needs module
