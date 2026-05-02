@@ -29,3 +29,11 @@ pkgs/**/*.deb
 
 # Sketch-Backups
 src/*.bak
+
+# Screenshot capture log (raw serial dump from `*-shots` envs).
+# The decoded PNGs in screenshots/ stay tracked.
+capture.log
+
+# uv virtualenv inside tools/. uv.lock IS tracked for reproducibility,
+# the .venv directory is per-machine and must not be committed.
+tools/.venv/

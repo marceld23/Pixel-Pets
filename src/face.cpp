@@ -1,5 +1,6 @@
 #include "face.h"
 #include "i18n.h"
+#include "screenshot.h"
 #include <math.h>
 
 // Forward decls for helpers used by drawFace() — definitions sit further
@@ -1532,6 +1533,11 @@ void drawIdle(M5Canvas& c, int hx, int hy, const PetView& v) {
   uint32_t period = (v.needs.energy < 30) ? 2000 :
                     (v.needs.energy < 70) ? 3000 : 4000;
   bool blinking = ((v.now_ms / 100) % (period / 100)) < 2;
+#if SCREENSHOT_MODE
+  // During the animals-cycle the screenshot module forces eyes open so the
+  // dumped frame doesn't accidentally land on a blink.
+  if (screenshot::g_forceEyesOpen) blinking = false;
+#endif
   if (blinking) {
     drawEyeBlink(c, hx - EYE_DX, hy + EYE_OFF_Y);
     drawEyeBlink(c, hx + EYE_DX, hy + EYE_OFF_Y);
@@ -4093,7 +4099,14 @@ void drawFace(M5Canvas& canvas, const PetView& v) {
     drawMouthO(canvas, hx, hy + MOUTH_OFF_Y, 10);
     drawSneezePuff(canvas, hx, hy, microAge);
   } else {
-    switch (v.face) {
+    Face f = v.face;
+#if SCREENSHOT_MODE
+    // The animals cycle wants neutral, eyes-open frames for every animal
+    // regardless of the pet's current mood. Forcing Idle routes through
+    // drawIdle, which checks g_forceEyesOpen to suppress blinking too.
+    if (screenshot::g_forceEyesOpen) f = Face::Idle;
+#endif
+    switch (f) {
       case Face::Idle:     drawIdle    (canvas, hx, hy, v); break;
       case Face::Happy:    drawHappy   (canvas, hx, hy, v); break;
       case Face::Excited:  drawExcited (canvas, hx, hy, v); break;

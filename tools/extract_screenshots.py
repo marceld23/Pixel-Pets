@@ -39,13 +39,20 @@ HEADER_RE = re.compile(
 )
 
 
-def rgb565le_to_rgb888(buf: bytes, w: int, h: int) -> bytes:
-    """Decode little-endian RGB565 (2 bytes/pixel) into 24-bit RGB."""
+def rgb565_to_rgb888(buf: bytes, w: int, h: int, big_endian: bool) -> bytes:
+    """Decode RGB565 (2 bytes/pixel) into 24-bit RGB.
+
+    `big_endian=True` matches M5Canvas / LovyanGFX sprite buffers on
+    M5Stack ILI934x devices (the panel's native wire order).
+    """
     out = bytearray(w * h * 3)
     for i in range(w * h):
-        lo = buf[i * 2]
-        hi = buf[i * 2 + 1]
-        v = (hi << 8) | lo
+        b0 = buf[i * 2]
+        b1 = buf[i * 2 + 1]
+        if big_endian:
+            v = (b0 << 8) | b1
+        else:
+            v = (b1 << 8) | b0
         r = (v >> 11) & 0x1F
         g = (v >> 5) & 0x3F
         b = v & 0x1F
@@ -58,11 +65,11 @@ def rgb565le_to_rgb888(buf: bytes, w: int, h: int) -> bytes:
 
 
 def save_screenshot(out_dir: Path, name: str, w: int, h: int, raw: bytes,
-                    counters: dict) -> Path:
+                    fmt: str, counters: dict) -> Path:
     counters[name] += 1
     seq = counters[name]
     filename = f"{name}_{seq:02d}.png"
-    rgb = rgb565le_to_rgb888(raw, w, h)
+    rgb = rgb565_to_rgb888(raw, w, h, big_endian=(fmt == "rgb565be"))
     img = Image.frombytes("RGB", (w, h), rgb)
     out_path = out_dir / filename
     img.save(out_path)
@@ -87,18 +94,18 @@ def parse_stream(lines, out_dir: Path) -> int:
                 h = int(m.group(3))
                 fmt = m.group(4)
                 nbytes = int(m.group(5))
-                if fmt != "rgb565le":
+                if fmt not in ("rgb565be", "rgb565le"):
                     sys.stderr.write(
                         f"warning: unknown format '{fmt}' for {name}, skipping\n"
                     )
                     continue
-                header = (name, w, h, nbytes)
+                header = (name, w, h, nbytes, fmt)
                 b64_chunks = []
                 in_block = True
         else:
             if line == "--SCREENSHOT-END":
                 if header is not None:
-                    name, w, h, nbytes = header
+                    name, w, h, nbytes, fmt = header
                     try:
                         decoded = base64.b64decode("".join(b64_chunks))
                     except Exception as e:  # pragma: no cover
@@ -106,7 +113,7 @@ def parse_stream(lines, out_dir: Path) -> int:
                         decoded = b""
                     if len(decoded) >= nbytes:
                         out_path = save_screenshot(
-                            out_dir, name, w, h, decoded[:nbytes], counters
+                            out_dir, name, w, h, decoded[:nbytes], fmt, counters
                         )
                         sys.stderr.write(f"saved {out_path}  ({w}x{h})\n")
                         saved += 1

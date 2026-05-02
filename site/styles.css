@@ -281,6 +281,41 @@ pre code { background: none; padding: 0; color: inherit; }
   text-align: center;
 }
 
+/* ── Real-hardware animal screenshots ──────────────────────────────────── */
+
+.animal-shots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin: 14px 0 32px;
+}
+
+.animal-shots figure {
+  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+
+.animal-shots img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  /* Keep the 320×240 pixel art crisp when scaled up. */
+  image-rendering: pixelated;
+}
+
+.animal-shots figcaption {
+  margin-top: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
 /* ── Pet cards ──────────────────────────────────────────────────────────── */
 
 .pet-cards {

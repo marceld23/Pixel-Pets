@@ -5485,6 +5485,14 @@ void setup() {
   g_canvas.setTextSize(2);
 
   screenshot::begin(&g_canvas);
+  screenshot::registerAnimalAccessors(
+      []() -> uint8_t { return (uint8_t)(g_pet.persisted.animal & 3); },
+      [](uint8_t a)   { g_pet.persisted.animal = (uint8_t)(a & 3); });
+  screenshot::registerLangSetter(
+      [](uint8_t l) {
+        g_lang = l ? 1 : 0;
+        g_pet.persisted.language = g_lang;
+      });
 
   M5.Speaker.setVolume(g_volume);
 

@@ -5,4 +5,5 @@ description = "Helper scripts for the Muffin / Goo-Goo / Visu / Pip pet firmware
 requires-python = ">=3.9"
 dependencies = [
     "pillow>=10.0",
+    "pyserial>=3.5",
 ]

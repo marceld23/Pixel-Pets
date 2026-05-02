@@ -4,6 +4,14 @@
 
 A family of virtual pets on M5Stack hardware. **Three pet variants** — **Muffin** (CoreS3 + LLM), **Visu** (CoreS3 alone), **Goo-Goo** (Core2) — plus one optional **accessory**, **Pip** (M5StickC PLUS2), which acts as a pocket-sized companion device for any of the bigger pets. One source tree, five build envs (`cores3` / `visu` / `core2` / `pip` / `pip-s3`). Pet logic, animations, mini-games, ESP-NOW friends and weather/location are target-agnostic; voice and the front camera are CoreS3-only.
 
+## Pick your pet animal
+
+Each device renders the same set of animals — **Bear, Cat, Dog** — chosen on first boot (and changeable later in Settings). Real screenshots from a Goo-Goo (Core2):
+
+| Bear | Cat | Dog |
+|:---:|:---:|:---:|
+| ![Bear](screenshots/pet_bear.png) | ![Cat](screenshots/pet_cat.png) | ![Dog](screenshots/pet_dog.png) |
+
 🐻 **Live demo + landing page**: [pixel-pets.github.io](https://duetscher.github.io/pixel-pets/) (or whichever path the repo ends up under). The site has a click-and-poke browser pet, an overview of all variants and the get-started guide. Source under [`site/`](site/), deployed via GitHub Actions on every push.
 
 ## Targets
