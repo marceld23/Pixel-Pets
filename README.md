@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.jpg" alt="Pixel Pets logo" width="220">
+</p>
+
 # Pixel Pets
 
 **Version 1.0.0** — first stable release. See [Version history](#version-history) at the bottom for the rough scope.
@@ -142,10 +146,11 @@ Python tooling is managed with [`uv`](https://docs.astral.sh/uv/) — see [`tool
 
 ## Authors
 
-- Concept, hardware testing, kid-experience tuning: **Justus** and **Marcel**.
-- Firmware code (every line, including this README): **AI assistants**, primarily Claude (Anthropic) and the GitHub Copilot family. Each commit is co-authored with the model that wrote it — `git log --format="%an %ae"` shows the breakdown.
+A father-and-son project: **Justus Dütscher** (10) — ideas, design decisions, tireless field-testing — and **Marcel Dütscher** (Papa) — translating Justus's ideas for the AI doing the actual coding, plus the bits of technical know-how that don't fit on a kid's whiteboard. The first beta was finished on a Sunday afternoon; the boring polish was Papa's evening work.
 
-See also the credits screen in the menu (Settings → Credits).
+Every line of firmware was written by AI assistants — primarily **Claude (Anthropic)** — under our direction. `git log --format="%an %ae"` shows which model touched which commit.
+
+See [`CREDITS.md`](CREDITS.md) for the full story, and the in-app credits screen via Settings → Credits.
 
 ## Repository naming
 
