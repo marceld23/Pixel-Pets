@@ -12,7 +12,7 @@ Each device renders the same set of animals — **Bear, Cat, Dog** — chosen on
 |:---:|:---:|:---:|
 | ![Bear](screenshots/pet_bear.png) | ![Cat](screenshots/pet_cat.png) | ![Dog](screenshots/pet_dog.png) |
 
-🐻 **Live demo + landing page**: [pixel-pets.github.io](https://duetscher.github.io/pixel-pets/) (or whichever path the repo ends up under). The site has a click-and-poke browser pet, an overview of all variants and the get-started guide. Source under [`site/`](site/), deployed via GitHub Actions on every push.
+🐻 **Live demo + landing page**: <https://marceld23.github.io/Pixel-Pets/>. The site has a click-and-poke browser pet, an overview of all variants and the get-started guide. Source under [`site/`](site/), deployed via GitHub Actions on every push.
 
 ## Targets
 
