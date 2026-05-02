@@ -87,6 +87,46 @@ Web radio (in the media menu) plays **WDR Die Maus** in German and **Fun Kids UK
 
 On Muffin and Visu additionally: **Photo** and **Gallery** in the media menu. Photo opens the front camera with the pet overlaid in the lower-left corner (pet selfie), tap = capture. Gallery walks through the last five photos with left/right-tap navigation. Both reward happiness without negative effects.
 
+## For parents
+
+Pixel Pets is a DIY maker project, but it is designed with families in mind.
+
+- No cloud account is required for the core pet experience.
+- No tracking or subscription model is built into the firmware.
+- The code is open source and can be inspected, changed and flashed yourself.
+- A configurable parental session limit is included.
+- The project works best as a shared maker activity: assemble, flash, test, name the pet and invent new interactions together.
+
+Pixel Pets is not a certified commercial toy. Adult setup and supervision are recommended.
+
+## For makers
+
+Pixel Pets is also a compact playground for embedded interaction design:
+
+- ESP32 / M5Stack firmware with PlatformIO
+- one source tree with multiple hardware targets
+- shared pet state and rendering logic
+- touch, buttons, IMU, camera and audio integration
+- ESP-NOW communication between devices
+- optional offline voice pipeline on CoreS3 + Module-LLM
+- world data via WiFi, cached locally
+- native unit tests for pure logic modules
+
+Good places to start hacking are new scenes, mini-games, face animations, sounds, Pip interactions or new pet personalities.
+
+## Fastest start
+
+The easiest way to try Pixel Pets depends on the hardware you already have:
+
+| If you have... | Start with... | Why |
+|---|---|---|
+| **M5Stack Core2** | `core2` / Goo-Goo | Simple button-based pet, no extra module required |
+| **M5Stack CoreS3** | `visu` | Full-screen touch pet with camera features, no LLM module required |
+| **CoreS3 + Module-LLM** | `cores3` / Muffin | Full flagship experience with offline voice commands |
+| **M5StickC PLUS2** | `pip` or `pip-s3` | Tiny companion accessory for sending treats and gestures |
+
+If you are new to the project, start with one main pet first. Pip is optional and becomes useful once you already have a bigger home pet running.
+
 ## Build & flash
 
 ```bash
