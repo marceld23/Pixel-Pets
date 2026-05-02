@@ -588,7 +588,12 @@ All `.deb` files live locally under [`../pkgs/`](../pkgs/) in the project, sorte
 Run in this order, USB plugged into the LLM module:
 
 ```bash
-ADB="C:/Users/duetscher/AppData/Local/Microsoft/WinGet/Packages/Google.PlatformTools_Microsoft.Winget.Source_8wekyb3d8bbwe/platform-tools/adb.exe"
+# Path to the `adb` executable. If it's already on your PATH (`adb` works
+# in your shell), leave this as `adb`. Otherwise point it at your install:
+#   Windows:  winget install Google.PlatformTools  (then `adb` is on PATH after a new shell)
+#   macOS:    brew install android-platform-tools
+#   Linux:    apt install adb  (or distro equivalent)
+ADB=adb
 
 # 1) Upload all pkgs — they end up flat under /root/pkgs/, dpkg works
 #    with the bare filenames afterwards.
