@@ -13,9 +13,9 @@
   <a href="LICENSE">License</a>
 </p>
 
-**Version 1.0.0** — first stable release. See [Version history](#version-history) at the bottom for the rough scope.
-
 A family of virtual pets on M5Stack hardware. **Three pet variants** — **Muffin** (CoreS3 + LLM), **Visu** (CoreS3 alone), **Goo-Goo** (Core2) — plus one optional **accessory**, **Pip** (M5StickC PLUS2), which acts as a pocket-sized companion device for any of the bigger pets. One source tree, five build envs (`cores3` / `visu` / `core2` / `pip` / `pip-s3`). Pet logic, animations, mini-games, ESP-NOW friends and weather/location are target-agnostic; voice and the front camera are CoreS3-only.
+
+**Version 1.0.0** — first stable release. See [Version history](#version-history) at the bottom for the rough scope.
 
 ## Pick your pet animal
 
@@ -212,12 +212,8 @@ First stable release. Three pet variants and one accessory, all verified end-to-
 
 **Other lanes that grew along the way:**
 
-- All source-code comments translated to English ([`f84b940`](https://github.com/marceld23/Pixel-Pets/commit/f84b940))
-- [`AGENTS.md`](AGENTS.md) — drop-in context file for AI coding agents working on the repo
 - GitHub Pages site rebuilt around "three pets + one accessory" framing, click-and-poke browser pet, hardware shopping list
 - CI matrix builds all 5 envs on every push; native unit tests for the pure-logic needs module
-
-This 1.0.0 line is feature-frozen for now. Future work would be additive (new Pip features behind reserved msgTypes 17/19/20, new scenes, new mini-games) without breaking compatibility — see the "Other companion ideas" sketch in [`docs/concept.md`](docs/concept.md).
 
 ## License
 
