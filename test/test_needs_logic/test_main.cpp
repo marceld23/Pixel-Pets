@@ -86,10 +86,14 @@ void test_decayNeeds_awake_decays_at_documented_rates(void) {
     //   happiness: −1 every 5 s → −12
     //   energy:    −1 every 10 s → −6
     //   fullness:  −1 every 12 s → −5
+    // Seed time is deliberately non-zero: needs_logic.cpp uses
+    // `last_decay_ms == 0` as the "not yet seeded" sentinel, so
+    // seeding with now_ms=0 collides with the sentinel and leaves
+    // last_decay_ms unset.
     Needs n{100, 100, 100};
     uint32_t last = 0;
-    decayNeeds(n, 0, last, false);              // seed
-    decayNeeds(n, 60000, last, false);          // 60 ticks
+    decayNeeds(n, 1000, last, false);           // seed at t=1 s
+    decayNeeds(n, 61000, last, false);          // 60 ticks elapsed
     TEST_ASSERT_EQUAL_UINT8(100 - 12, n.happiness);
     TEST_ASSERT_EQUAL_UINT8(100 - 6,  n.energy);
     TEST_ASSERT_EQUAL_UINT8(100 - 5,  n.fullness);
@@ -101,8 +105,8 @@ void test_decayNeeds_sleeping_only_regenerates_energy(void) {
     //   happiness, fullness: frozen
     Needs n{50, 50, 50};
     uint32_t last = 0;
-    decayNeeds(n, 0, last, true);
-    decayNeeds(n, 20000, last, true);
+    decayNeeds(n, 1000, last, true);            // seed at t=1 s
+    decayNeeds(n, 21000, last, true);           // 20 ticks elapsed
     TEST_ASSERT_EQUAL_UINT8(50 + 10, n.energy);
     TEST_ASSERT_EQUAL_UINT8(50, n.happiness);
     TEST_ASSERT_EQUAL_UINT8(50, n.fullness);
