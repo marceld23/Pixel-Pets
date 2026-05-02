@@ -1576,8 +1576,15 @@ static void updateCrossGame(uint32_t now) {
         g_activity.obsY[i]  = kCrossLaneY[lane];
         g_activity.obsVx[i] = leftToRight ? (3 + (int)((r >> 11) % 3))
                                           : -(3 + (int)((r >> 11) % 3));
-        // Type 1..4 with high bit signaling direction (for headlight side)
+        // Type 1..4 with high bit signaling direction (for headlight side).
+        // Bits 3-4 optionally carry a driver-pet id (1=Bear, 2=Cat, 3=Dog,
+        // 0=empty car). About half the cars get a driver — readable but
+        // not so dense that the lanes look uniform.
         uint8_t k = (uint8_t)(((r >> 17) % 4) + 1);
+        if (((r >> 23) & 1u) == 0) {
+          uint8_t driver = (uint8_t)(((r >> 24) % 3u) + 1u);
+          k = (uint8_t)(k | (driver << 3));
+        }
         if (!leftToRight) k |= 0x80;
         g_activity.obsType[i] = k;
         break;

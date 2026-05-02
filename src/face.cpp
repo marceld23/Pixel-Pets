@@ -3214,6 +3214,40 @@ void drawActivityAsteroidsGame(M5Canvas& c, const ActivityView& v) {
   }
 }
 
+// Tiny driver pet drawn inside a Frogger car's windshield. ~9×5 head with
+// 1–2 px ears poking above the roof so the animal type is recognisable
+// at this scale. Sized to fit the 14×6 light-blue glass — does not extend
+// into adjacent lanes.
+static void drawCarDriver(M5Canvas& c, int cx, int car_y, uint8_t animal) {
+  if (animal == 0) return;
+  AnimalType t = (animal == 1) ? AnimalType::Bear :
+                 (animal == 2) ? AnimalType::Cat  :
+                                 AnimalType::Dog;
+  AnimalStyle s = styleFor(t, c);
+  uint16_t eye = c.color565(20, 20, 30);
+  int cy = car_y - 2;                  // windshield centre
+
+  // Ears first, so the head ellipse covers their inner edges.
+  if (t == AnimalType::Cat) {
+    c.fillTriangle(cx - 5, cy - 3, cx - 2, cy - 3, cx - 4, cy - 6, s.body);
+    c.fillTriangle(cx + 5, cy - 3, cx + 2, cy - 3, cx + 4, cy - 6, s.body);
+  } else if (t == AnimalType::Dog) {
+    c.fillEllipse(cx - 5, cy + 1, 1, 2, s.bodyShade);
+    c.fillEllipse(cx + 5, cy + 1, 1, 2, s.bodyShade);
+  } else {                              // Bear
+    c.fillCircle(cx - 4, cy - 4, 1, s.body);
+    c.fillCircle(cx + 4, cy - 4, 1, s.body);
+  }
+
+  // Head — fits inside the windshield (radii 4×2 → 9×5 footprint).
+  c.fillEllipse(cx, cy, 4, 2, s.body);
+
+  // Eyes + tiny muzzle pixel — gives a focal point at this scale.
+  c.drawPixel(cx - 2, cy - 1, eye);
+  c.drawPixel(cx + 2, cy - 1, eye);
+  c.drawPixel(cx,     cy + 1, s.nose);
+}
+
 void drawActivityCrossGame(M5Canvas& c, const ActivityView& v) {
   drawSceneCity(c, v.phase, v.now_ms);
 
@@ -3253,6 +3287,10 @@ void drawActivityCrossGame(M5Canvas& c, const ActivityView& v) {
     c.fillRoundRect(x - 8, y - 6, 16, 8, 2, body);
     c.drawRoundRect(x - 8, y - 6, 16, 8, 2, c.color565(30, 30, 35));
     c.fillRoundRect(x - 7, y - 5, 14, 6, 1, c.color565(180, 220, 240));
+    // Optional driver pet — encoded in bits 3-4 of obsType
+    // (0 = no driver, 1 = Bear, 2 = Cat, 3 = Dog). Drawn over the windshield.
+    uint8_t driver = (k >> 3) & 0x03;
+    if (driver != 0) drawCarDriver(c, x, y, driver);
     // Wheels
     c.fillCircle(x - 11, y + h, 3, c.color565(20, 20, 25));
     c.fillCircle(x + 11, y + h, 3, c.color565(20, 20, 25));
