@@ -169,19 +169,23 @@ Detailed hardware/flash notes (COM-port conflicts, Module-LLM setup, gotchas):
 ```
 src/
   target_caps.h            ← TARGET_HAS_LLM / HAS_CAMERA / HAS_HARD_BUTTONS / ...
-  main.cpp                 ← orchestrator (setup + loop)
+  main.cpp                 ← orchestrator (setup + loop) for the big pets
+  main_pip.cpp             ← Pip orchestrator (replaces main.cpp on the pip env)
   face.{h,cpp}             ← renderer (PetView-driven)
-  pet_state.{h,cpp}        ← needs, RTC, persistence, touch zones
-  voice_pipeline.{h,cpp}   ← wake/VAD/Whisper/Qwen3   (HAS_LLM only)
+  pet_state.{h,cpp}        ← pet runtime: RTC, persistence, gaze, touch zones
+  needs_logic.{h,cpp}      ← pure happiness/energy/fullness logic (native-testable)
+  voice_pipeline.{h,cpp}   ← wake / VAD / Whisper / Qwen3 over UART (HAS_LLM only)
   face_detect.{h,cpp}      ← front-camera face detection + JPEG capture (HAS_CAMERA only)
   photo_store.{h,cpp}      ← LittleFS-backed selfie storage (HAS_CAMERA only)
   webradio.{h,cpp}         ← MP3 stream decoder (HAS_WIFI only)
+  pip_link.{h,cpp}         ← ESP-NOW listener for treats/tricks from a paired Pip
   net.{h,cpp}              ← WiFi, captive portal, NTP, ESP-NOW friends, parent server
   world.{h,cpp}            ← IP geolocation + open-meteo + moon phase
-  i18n.{h,cpp}             ← string table (single language at runtime)
+  i18n.{h,cpp}             ← string table (DE + EN, switchable at runtime)
+  wifi_config.h            ← compile-time WiFi credential defaults
+  screenshot.{h,cpp}       ← canvas dumper (SCREENSHOT_MODE only, *-shots envs)
   sounds/                  ← embedded WAV headers (xxd -i)
   pip/                     ← StickC Plus 2-only renderer + tone-based sound engine
-  main_pip.cpp             ← Pip orchestrator (replaces main.cpp on the pip env)
 
 docs/
   concept.md               ← gameplay & high-level design
@@ -189,10 +193,20 @@ docs/
   hardware.md              ← hardware setup + flashing + Module-LLM workflow
   sound_assets.md          ← WAV sample spec and trigger map
 
-platformio.ini             ← [env:cores3] + [env:core2] + [env:visu] + [env:pip]
+site/                      ← GitHub Pages landing page (index.html + scripts + assets)
+assets/                    ← master media: logo.jpg, photos/, sounds/, video/
+screenshots/               ← real-hardware Bear / Cat / Dog captures used in this README
+tools/                     ← Python helpers (uv-managed): shot.py, listen.py, extract_screenshots.py
+test/test_needs_logic/     ← Unity tests for the pure-logic needs module (`pio test -e native`)
+pkgs/                      ← Module-LLM .deb packages (audio / framework / models / services; .debs gitignored)
+.github/workflows/         ← ci.yml (matrix builds + native tests), pages.yml (Pages deploy)
+
+platformio.ini             ← [env:cores3] + [env:core2] + [env:visu] + [env:pip] + [env:pip-s3] + *-shots variants
 partitions_cores3_16MB.csv ← partition table for CoreS3 / Visu (incl. LittleFS)
 partitions_core2_16MB.csv  ← partition table for Core2
 partitions_pip_8MB.csv     ← partition table for StickC Plus 2
+CREDITS.md                 ← father-and-son project credits
+LICENSE                    ← MIT
 ```
 
 ## Documentation
@@ -237,10 +251,6 @@ Things that genuinely help, in order of effort:
 - **Try it with a kid you know.** That's actually the most valuable feedback we get — what works, what confuses, what's missing for a 7-year-old vs a 10-year-old.
 
 No CLA, no contributor agreement, no Slack to join. Just GitHub.
-
-## Repository naming
-
-Originally this repo was called `muffin` (the CoreS3 flagship pet). The umbrella project name is now **Pixel Pets**, and the repo can be renamed to `pixel-pets` on GitHub at any time — GitHub redirects the old URL automatically. Local clones don't need to be re-cloned; `git remote set-url origin <new>` is enough.
 
 ## Version history
 
