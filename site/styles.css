@@ -264,7 +264,8 @@ pre code { background: none; padding: 0; color: inherit; }
 }
 .section-alt > * { max-width: var(--max-width); margin-left: auto; margin-right: auto; }
 .section-alt > h2,
-.section-alt > .section-lead { padding: 0 var(--gutter); }
+.section-alt > .section-lead,
+.section-alt > .steps { padding: 0 var(--gutter); }
 
 .section-lead {
   font-size: 17px;
@@ -593,6 +594,11 @@ pre code { background: none; padding: 0; color: inherit; }
   margin: 28px 0 0;
   counter-reset: step;
   display: grid;
+  /* Pin the column to the available width so wide <pre> blocks scroll
+     internally instead of stretching the section past the viewport on
+     mobile. Default grid tracks are `auto` = max-content, which a long
+     `pio run -e cores3 -t upload …` line would happily honour. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
 }
 .steps li {
