@@ -10,6 +10,7 @@
   <a href="#for-parents">For parents</a> ·
   <a href="#for-makers">For makers</a> ·
   <a href="#documentation">Documentation</a> ·
+  <a href="#help-it-grow">Help it grow</a> ·
   <a href="#version-history">Version history</a>
 </p>
 
@@ -210,6 +211,20 @@ A father-and-son project: **Justus Dütscher** (10) — ideas, design decisions,
 Every line of firmware was written by AI assistants — primarily **Claude (Anthropic)** — under our direction. `git log --format="%an %ae"` shows which model touched which commit.
 
 See [`CREDITS.md`](CREDITS.md) for the full story, and the in-app credits screen via Settings → Credits.
+
+## Help it grow
+
+Pixel Pets is a family project — not a startup, no roadmap, no metrics dashboard. But we'd love for it to find more kids and dads who want to tinker.
+
+Things that genuinely help, in order of effort:
+
+- **Drop a ⭐ on the repo.** It's the cheapest signal that something resonated, and it really does help the project surface to other curious people scrolling GitHub. Justus checks the count on Sundays.
+- **Share what you built.** Photos, videos, mods — open a GitHub Discussion or Issue. Even a "got it running, kid loves it" message is encouraging.
+- **Suggest a feature.** New animals, new mini-games, new scenes, new Pip interactions — open an Issue. Justus has Strong Opinions™ on what feels right; pitch yours.
+- **Send a PR.** Good first contributions: a new sound, a new scene, a face animation, a mini-game, an extra language string. [`docs/architecture.md`](docs/architecture.md) explains where things live.
+- **Try it with a kid you know.** That's actually the most valuable feedback we get — what works, what confuses, what's missing for a 7-year-old vs a 10-year-old.
+
+No CLA, no contributor agreement, no Slack to join. Just GitHub.
 
 ## Repository naming
 
