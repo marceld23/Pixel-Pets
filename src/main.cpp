@@ -5375,6 +5375,11 @@ static void dispatchPendingTag(uint32_t now) {
 static void voiceSetupTask(void* pv) {
     voice::Config vcfg;
     vcfg.system_prompt = SYSTEM_PROMPT;
+    // Tie Whisper's ASR language to the persisted UI language so an EN-set
+    // pet also transcribes English audio. whisper-base is multilingual, so
+    // the module side doesn't change — only the language code we send in
+    // the whisper.setup call. New setting takes effect on next boot.
+    vcfg.whisper_language = (g_pet.persisted.language == 1) ? "en" : "de";
     g_voiceSetupOk   = voice::begin(Serial2, vcfg);
     g_voiceSetupDone = true;
     vTaskDelete(nullptr);

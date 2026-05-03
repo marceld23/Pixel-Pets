@@ -506,7 +506,7 @@ The packages above only decide what the module is *capable of*. Which model, lan
 | Firmware field    | Current value         | Meaning |
 |---|---|---|
 | `wake_word`       | `"MUFFIN"`            | Word the KWS service listens for. Sherpa-KWS supports arbitrary words; just change the string. |
-| `whisper_language`| `"de"`                | ISO code Whisper uses for ASR. `"en"` works out of the box because `whisper-base` is multilingual. |
+| `whisper_language`| follows UI language    | ISO code Whisper uses for ASR. Resolved at boot from `g_pet.persisted.language` (`0` → `"de"`, `1` → `"en"`) in `voiceSetupTask`. `whisper-base` is multilingual, so changing the UI language and rebooting is enough; nothing changes on the module side. |
 | `whisper_model`   | `"whisper-base"`      | Model identifier. Maps to the `.deb` filename without the version: `llm-model-whisper-base_*.deb` → `whisper-base`. Switching to `"whisper-tiny"` works if the corresponding model is installed. |
 | `llm_model`       | `"qwen3-0.6B-ax630c"` | Same naming rule: `llm-model-qwen3-0.6B-ax630c_*.deb` → `qwen3-0.6B-ax630c`. The 1.5B-Int4 model identifier (`qwen2.5-1.5B-Int4-ax630c`) loads on paper but the package is broken — see the gotcha below. |
 | `llm_max_tokens`  | `64`                  | Hard cap; raising it doesn't help with Qwen3 thinking-mode (see the dedicated gotcha). |
@@ -516,13 +516,15 @@ The packages above only decide what the module is *capable of*. Which model, lan
 
 ### Worked example: switch Whisper from German to English
 
-Edit [`../src/voice_pipeline.h`](../src/voice_pipeline.h):
+On the device: **Settings → Sprache → English**, then reboot. `voiceSetupTask` reads `g_pet.persisted.language` on the next boot and sends `whisper_language = "en"` to the module. No firmware edit, no module change. Whisper-Base is multilingual.
+
+Want it the other way (UI in German, ASR pinned to English regardless)? Override the line in [`../src/main.cpp`](../src/main.cpp) inside `voiceSetupTask`:
 
 ```cpp
-const char* whisper_language = "en";   // was "de"
+vcfg.whisper_language = "en";   // hard-pin instead of following persisted.language
 ```
 
-Reflash the CoreS3 (`pio run -e cores3 -t upload`). Nothing changes on the LLM module side — Whisper-Base is multilingual, the language code is just sent in the next `whisper.setup`.
+The system prompt already handles both languages; no prompt change needed when ASR switches.
 
 ---
 
