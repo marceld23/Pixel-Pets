@@ -43,7 +43,11 @@ Each device renders the same set of animals — **Bear, Cat, Dog** — chosen on
   <em>Goo-Goo on a meadow scene — what the bear looks like through a phone camera.</em>
 </p>
 
-🐻 **Live demo + landing page**: <https://marceld23.github.io/Pixel-Pets/>. The site has a click-and-poke browser pet, an overview of all variants and the get-started guide. Source under [`site/`](site/), deployed via GitHub Actions on every push.
+**Where to find Pixel Pets:**
+
+- 🐻 [**Live landing page**](https://marceld23.github.io/Pixel-Pets/) — short intro, real-hardware video and an overview of all variants. Source under [`site/`](site/), deployed via GitHub Actions on every push.
+- 🛠️ [**Build write-up on Hackster.io**](https://www.hackster.io/marcelduetscher/pixel-pets-an-ai-assisted-virtual-pet-family-for-m5stack-baa76c) — the assembly story, build photos and Q&A in the maker-community format.
+- 💻 [**Source on GitHub**](https://github.com/marceld23/Pixel-Pets) — you're already here.
 
 ## Highlights
 
@@ -226,6 +230,7 @@ Pixel Pets is a family project — not a startup, no roadmap, no metrics dashboa
 Things that genuinely help, in order of effort:
 
 - **Drop a ⭐ on the repo.** It's the cheapest signal that something resonated, and it really does help the project surface to other curious people scrolling GitHub. Justus checks the count on Sundays.
+- **Or leave a "respect" on Hackster.io** — the project page is at [hackster.io/marcelduetscher/pixel-pets-...](https://www.hackster.io/marcelduetscher/pixel-pets-an-ai-assisted-virtual-pet-family-for-m5stack-baa76c). Same idea, different community: Hackster's respects + comments help it surface for other makers there.
 - **Share what you built.** Photos, videos, mods — open a GitHub Discussion or Issue. Even a "got it running, kid loves it" message is encouraging.
 - **Suggest a feature.** New animals, new mini-games, new scenes, new Pip interactions — open an Issue. Justus has Strong Opinions™ on what feels right; pitch yours.
 - **Send a PR.** Good first contributions: a new sound, a new scene, a face animation, a mini-game, an extra language string. [`docs/architecture.md`](docs/architecture.md) explains where things live.
