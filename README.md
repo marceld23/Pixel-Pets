@@ -23,6 +23,17 @@ A family of virtual pets on M5Stack hardware. **Three pet variants** — **Muffi
   <em>The whole family on the desk: Muffin showing the dog pet, two Goo-Goos showing the bear and cat, with a Pip on the Tricks page in front.</em>
 </p>
 
+<p align="center">
+  <video src="assets/video/demo.mp4"
+         poster="assets/video/demo-cover.jpg"
+         controls muted loop playsinline
+         width="320">
+    Your browser doesn't render the inline video — see
+    <a href="assets/video/demo.mp4">demo.mp4</a> (10 s, 1.5 MB).
+  </video><br>
+  <em>10 seconds with a Goo-Goo on the desk.</em>
+</p>
+
 ## Pick your pet animal
 
 Each device renders the same set of animals — **Bear, Cat, Dog** — chosen on first boot (and changeable later in Settings). Real screenshots from a Goo-Goo (Core2):

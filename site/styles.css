@@ -207,43 +207,22 @@ pre code { background: none; padding: 0; color: inherit; }
 
 /* Device frame: rounded grey body around the canvas with a chin label,
    reminiscent of an M5Stack Core2 form factor. */
-.device-frame {
-  background: linear-gradient(180deg, #2c2638 0%, #1c1828 100%);
-  border-radius: 24px;
-  padding: 28px 16px 50px;
-  box-shadow: var(--shadow);
-  position: relative;
-  width: min(420px, 90vw);
-}
-.device-frame canvas {
-  width: 100%;
+.hero-video {
+  width: min(320px, 80vw);
   height: auto;
-  aspect-ratio: 320 / 240;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
   display: block;
   background: #000;
-  border-radius: 6px;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  cursor: pointer;
-}
-.device-label {
-  position: absolute;
-  bottom: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #ffe9ff;
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 4px;
-  opacity: .55;
 }
 
-.hint {
+.hero-caption {
   font-size: 14px;
   color: var(--ink-soft);
   font-style: italic;
   margin: 0;
   text-align: center;
+  max-width: 320px;
 }
 
 /* ── Section scaffolding ────────────────────────────────────────────────── */

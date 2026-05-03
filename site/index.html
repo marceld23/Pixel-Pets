@@ -54,14 +54,15 @@
   </div>
 
   <div class="hero-demo">
-    <div class="device-frame">
-      <canvas id="pet-canvas" width="320" height="240"
-              aria-label="Live demo of the virtual pet"></canvas>
-      <div class="device-label">M5</div>
-    </div>
-    <p class="hint" id="pet-hint"
-       data-en="Try poking my forehead, cheeks or nose."
-       data-de="Tipp mich auf die Stirn, die Wangen oder die Nase.">Try poking my forehead, cheeks or nose.</p>
+    <video class="hero-video"
+           src="video/demo.mp4"
+           poster="video/demo-cover.jpg"
+           muted loop autoplay playsinline controls
+           aria-label="10-second demo: a Goo-Goo on the desk"></video>
+    <p class="hero-caption"
+       data-en="Real Goo-Goo, real hand. 10 seconds on the desk."
+       data-de="Echter Goo-Goo, echte Hand. 10 Sekunden auf dem Tisch.">
+      Real Goo-Goo, real hand. 10 seconds on the desk.</p>
   </div>
 </section>
 
@@ -469,9 +470,7 @@ pio run -e pip    -t upload         # Pip    (StickC Plus 2)</code></pre>
 </footer>
 
 <script src="scripts/i18n.js"></script>
-<script src="scripts/sound.js"></script>
 <script src="scripts/pet.js"></script>
-<script src="scripts/interaction.js"></script>
 <script src="scripts/cards.js"></script>
 <script src="scripts/main.js"></script>
 </body>
