@@ -264,8 +264,7 @@ pre code { background: none; padding: 0; color: inherit; }
 }
 .section-alt > * { max-width: var(--max-width); margin-left: auto; margin-right: auto; }
 .section-alt > h2,
-.section-alt > .section-lead,
-.section-alt > .steps { padding: 0 var(--gutter); }
+.section-alt > .section-lead { padding: 0 var(--gutter); }
 
 .section-lead {
   font-size: 17px;
@@ -604,7 +603,11 @@ pre code { background: none; padding: 0; color: inherit; }
 .steps li {
   background: var(--surface);
   border-radius: var(--radius);
-  padding: 22px 26px;
+  /* Horizontal padding = gutter so the card's *text* starts at the same
+     X position as the h2 above it (which is also gutter-padded). The
+     <ol> itself stays unpadded, so card edges extend out to the section
+     content boundaries — that's the visual alignment we want. */
+  padding: 22px var(--gutter);
   box-shadow: var(--shadow-sm);
 }
 .steps li h3 { margin-top: 0; }
