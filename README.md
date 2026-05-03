@@ -30,6 +30,15 @@ A family of virtual pets on M5Stack hardware. **Three pet variants** — **Muffi
   <em>10 seconds with a Goo-Goo on the desk — click the cover to watch (1.5 MB MP4). German-captioned variant at <a href="assets/video/demo-de.mp4">demo-de.mp4</a>.</em>
 </p>
 
+## 🎥 Project Deep-Dive
+
+<p align="center">
+  <a href="https://youtu.be/2V9dgzdXCR8">
+    <img src="https://img.youtube.com/vi/2V9dgzdXCR8/maxresdefault.jpg" alt="Pixel Pets Deep Dive (7 min, click to watch on YouTube)" width="640">
+  </a><br>
+  <em>A 7-minute deep dive into the project, safe hardware for kids, and how 10-year-old Justus built this with Claude AI. Also available <a href="https://youtu.be/iCOyaJQFdys">in German</a>.</em>
+</p>
+
 ## Pick your pet animal
 
 Each device renders the same set of animals — **Bear, Cat, Dog** — chosen on first boot (and changeable later in Settings). Real screenshots from a Goo-Goo (Core2):
