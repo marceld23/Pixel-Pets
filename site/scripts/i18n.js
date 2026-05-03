@@ -45,6 +45,22 @@ function applyLang(target) {
     });
   });
 
+  // Localised media: data-src-en / data-src-de, data-poster-en / data-poster-de.
+  // Lets the same <video> swap its source + poster on language toggle. For
+  // VIDEO elements we call .load() after a src change so the new file is
+  // actually fetched (the browser keeps the previous decoder otherwise).
+  const cap = (lang === 'de') ? 'De' : 'En';
+  document.querySelectorAll('[data-src-en], [data-src-de]').forEach((el) => {
+    const next = el.dataset['src' + cap];
+    if (!next || el.getAttribute('src') === next) return;
+    el.setAttribute('src', next);
+    if (el.tagName === 'VIDEO') el.load();
+  });
+  document.querySelectorAll('[data-poster-en], [data-poster-de]').forEach((el) => {
+    const next = el.dataset['poster' + cap];
+    if (next && el.getAttribute('poster') !== next) el.setAttribute('poster', next);
+  });
+
   // Update the toggle's label
   const btn = document.getElementById('lang-toggle');
   if (btn) btn.textContent = (lang === 'de') ? 'DE / EN' : 'EN / DE';

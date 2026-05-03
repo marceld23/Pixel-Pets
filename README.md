@@ -24,12 +24,13 @@ A family of virtual pets on M5Stack hardware. **Three pet variants** — **Muffi
 </p>
 
 <p align="center">
-  <video src="assets/video/demo.mp4"
-         poster="assets/video/demo-cover.jpg"
-         controls muted loop playsinline
+  <video src="assets/video/demo-en.mp4"
+         poster="assets/video/demo-en-cover.jpg"
+         controls loop playsinline
          width="320">
     Your browser doesn't render the inline video — see
-    <a href="assets/video/demo.mp4">demo.mp4</a> (10 s, 1.5 MB).
+    <a href="assets/video/demo-en.mp4">demo-en.mp4</a> (10 s, 1.5 MB).
+    A German-captioned variant lives at <code>assets/video/demo-de.mp4</code>.
   </video><br>
   <em>10 seconds with a Goo-Goo on the desk.</em>
 </p>
