@@ -590,7 +590,7 @@ pre code { background: none; padding: 0; color: inherit; }
 .steps {
   list-style: none;
   padding: 0;
-  margin: 28px 0 0;
+  margin: 28px auto 0;
   counter-reset: step;
   display: grid;
   /* Pin the column to the available width so wide <pre> blocks scroll
@@ -599,6 +599,13 @@ pre code { background: none; padding: 0; color: inherit; }
      `pio run -e cores3 -t upload …` line would happily honour. */
   grid-template-columns: minmax(0, 1fr);
   gap: 22px;
+  /* Override the section-alt 1180 px default — single-column tutorial
+     reads better in a narrower centered column. Other sections on this
+     page (features, parents) span the full 1180 px but split into a
+     row of small cards, which visually centers itself by being a row.
+     A single full-width card looks like a giant left-stuck strip in
+     comparison. */
+  max-width: 720px;
 }
 .steps li {
   background: var(--surface);
