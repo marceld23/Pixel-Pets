@@ -24,15 +24,10 @@ A family of virtual pets on M5Stack hardware. **Three pet variants** — **Muffi
 </p>
 
 <p align="center">
-  <video src="assets/video/demo-en.mp4"
-         poster="assets/video/demo-en-cover.jpg"
-         controls loop playsinline
-         width="320">
-    Your browser doesn't render the inline video — see
-    <a href="assets/video/demo-en.mp4">demo-en.mp4</a> (10 s, 1.5 MB).
-    A German-captioned variant lives at <code>assets/video/demo-de.mp4</code>.
-  </video><br>
-  <em>10 seconds with a Goo-Goo on the desk.</em>
+  <a href="assets/video/demo-en.mp4">
+    <img src="assets/video/demo-en-cover.jpg" alt="Pixel Pets demo (10 s, click to watch)" width="320">
+  </a><br>
+  <em>10 seconds with a Goo-Goo on the desk — click the cover to watch (1.5 MB MP4). German-captioned variant at <a href="assets/video/demo-de.mp4">demo-de.mp4</a>.</em>
 </p>
 
 ## Pick your pet animal
