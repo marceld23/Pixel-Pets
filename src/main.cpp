@@ -6353,7 +6353,12 @@ void loop() {
     // 60 s timeout (or a manual back-X) — which is the exact "Empfangen:
     // 3" wait-screen bug we hit. forcedExit / sessionTimeout bypass
     // the window because they're already terminal cases.
-    constexpr uint32_t kFriendsDoneTrailingMs = 2000;
+    // 3 s of trailing time after both-done. Combined with the 100 ms
+    // round-robin re-broadcast in net.cpp (which also keeps running
+    // during this window now), every outbox item gets ~30 extra
+    // re-send chances on top of the in-session retries before the
+    // session actually closes.
+    constexpr uint32_t kFriendsDoneTrailingMs = 3000;
     if (bothDone && g_pet.friendsBothDoneAtMs == 0) {
       g_pet.friendsBothDoneAtMs = now;
       Serial.printf("[friends] bothDone reached @%lu — trailing %lu ms\n",

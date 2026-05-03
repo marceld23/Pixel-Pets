@@ -13,6 +13,7 @@
 #include <sys/time.h>
 #include <M5Unified.h>
 #include <esp_mac.h>
+#include <esp_random.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
 #include <esp_sntp.h>
@@ -154,10 +155,11 @@ bool               g_friendsRemoteDone    = false;
 uint32_t           g_friendsLocalDoneAt   = 0;
 
 // ── Rendezvous state ──────────────────────────────────────────────────────
-// Both pets must tap the big "Meet up" button within this window —
-// otherwise it doesn't count. Hard 60 s timeout for the whole rendezvous
-// phase, after which NoFriend.
-constexpr uint32_t kFriendsRendezvousWindowMs  = 5000;
+// Both pets need to tap the big "Meet up" button at some point during
+// the rendezvous phase — order doesn't matter, no synchronicity window
+// (used to be 5 s, but kids couldn't hit it reliably). Once a side has
+// tapped, its ready stays valid until the 60 s phase timeout. Match
+// fires the moment both sides have tapped at least once.
 constexpr uint32_t kFriendsRendezvousTimeoutMs = 60000;
 constexpr uint8_t  kMsgRendezvousReady         = 1;   // formerly kMsgMatch — repurposed
 uint32_t           g_friendsLocalReadyMs       = 0;
@@ -1117,8 +1119,11 @@ void friendsSendItem(uint8_t kind) {
   // packet can be lost under asymmetric RF conditions — and with it the
   // whole gift. Statistically, 3 attempts are enough to compensate for
   // single-loss rates << 100%. The receiver dedups via the eid (see
-  // friendsEidSeenOrRecord).
-  uint32_t eid = millis();
+  // friendsEidSeenOrRecord). Using esp_random() (32-bit hardware RNG)
+  // instead of millis() so two pets with similar boot times can't
+  // accidentally generate the same eid for different items — that would
+  // false-dedup and lose the second one.
+  uint32_t eid = esp_random();
   if (eid == 0) eid = 1;     // 0 is the sentinel for "no eid" (Ready/Done)
   for (int i = 0; i < 3; ++i) {
     friendsSendPacket(kind, eid);
@@ -1168,12 +1173,13 @@ void friendsTriggerRendezvous() {
 }
 
 bool friendsLocalReadyActive() {
-  uint32_t r = g_friendsLocalReadyMs;
-  return r != 0 && (millis() - r) < kFriendsRendezvousWindowMs;
+  // Once tapped, stays active for the rest of the rendezvous phase. The
+  // 60 s phase timeout in friendsTick() resets the state machine; the
+  // ready flag itself is cleared on friendsBegin / friendsEnd.
+  return g_friendsLocalReadyMs != 0;
 }
 bool friendsRemoteReadyActive() {
-  uint32_t r = g_friendsRemoteReadyMs;
-  return r != 0 && (millis() - r) < kFriendsRendezvousWindowMs;
+  return g_friendsRemoteReadyMs != 0;
 }
 
 uint8_t              friendsRxItemCount() { return g_friendsRxItemCount; }
@@ -1258,18 +1264,15 @@ void friendsTick(uint32_t now_ms) {
         }
       }
       // Re-broadcast: ESP-NOW broadcasts are best-effort and can be lost
-      // in one direction. While our local Ready is still in the match
-      // window, re-send it ~every 400 ms — that gives the partner several
-      // chances to hear it. Otherwise the symptom is: one pet matches
-      // (sees the other's first Ready), the other gets stuck until the
-      // 60 s timeout.
+      // in one direction. While our local Ready is set, re-send it
+      // ~every 400 ms for the rest of the rendezvous phase — that gives
+      // the partner many chances to hear it. Otherwise the symptom is:
+      // one pet matches (sees the other's first Ready), the other gets
+      // stuck until the 60 s timeout.
       if (g_friendsLocalReadyMs != 0 &&
-          (int32_t)(now_ms - g_friendsLocalReadyMs) <
-              (int32_t)kFriendsRendezvousWindowMs) {
-        if ((int32_t)(now_ms - g_friendsLastSendAt) >= 400) {
-          g_friendsLastSendAt = now_ms;
-          friendsSendPacket(kMsgRendezvousReady);
-        }
+          (int32_t)(now_ms - g_friendsLastSendAt) >= 400) {
+        g_friendsLastSendAt = now_ms;
+        friendsSendPacket(kMsgRendezvousReady);
       }
 
       // Diagnostics: log status once per second — lets us see whether
@@ -1283,12 +1286,12 @@ void friendsTick(uint32_t now_ms) {
                       (unsigned long)g_friendsLocalReadyMs,
                       (unsigned long)g_friendsRemoteReadyMs);
       }
-      // Match: both sides recently signalled Ready. Match window is
-      // kFriendsRendezvousWindowMs.
-      bool localReady  = g_friendsLocalReadyMs  != 0 &&
-                         (now_ms - g_friendsLocalReadyMs)  < kFriendsRendezvousWindowMs;
-      bool remoteReady = g_friendsRemoteReadyMs != 0 &&
-                         (now_ms - g_friendsRemoteReadyMs) < kFriendsRendezvousWindowMs;
+      // Match: both sides have tapped at least once during this
+      // rendezvous phase. No synchronicity window — kids tap when they
+      // tap, the order doesn't matter, the 60 s phase timeout below is
+      // the only time bound.
+      bool localReady  = g_friendsLocalReadyMs  != 0;
+      bool remoteReady = g_friendsRemoteReadyMs != 0;
       if (localReady && remoteReady) {
         Serial.println(F("[friends] rendezvous matched — entering Sending"));
         // Match burst: 4 more Ready packets in quick succession so the
@@ -1390,11 +1393,15 @@ void friendsTick(uint32_t now_ms) {
       }
       // Item re-broadcast: with asymmetric RF reception the partner
       // pet hears the every-500-ms Done but not the one-off 60 ms item
-      // bursts. Round-robin through our outbox every 250 ms until the
-      // partner acks with Done that it's finished receiving
-      // (g_friendsRemoteDone) — after that there's no point.
-      if (g_friendsTxOutboxCount > 0 && !g_friendsRemoteDone &&
-          (int32_t)(now_ms - g_friendsLastItemRebroadcastMs) >= 250) {
+      // bursts. Round-robin through our outbox every 100 ms — and keep
+      // going for the entire Sending phase, including the bothDone
+      // trailing window in main.cpp. We used to stop the moment the
+      // partner signalled Done ("they're done sending, stop bothering
+      // them"), but that misread Done as "done receiving" and lost
+      // late items in the asymmetric-link case. The state-machine exit
+      // out of Sending is the correct upper bound.
+      if (g_friendsTxOutboxCount > 0 &&
+          (int32_t)(now_ms - g_friendsLastItemRebroadcastMs) >= 100) {
         g_friendsLastItemRebroadcastMs = now_ms;
         const FriendsTxOutboxItem& it =
             g_friendsTxOutbox[g_friendsTxOutboxRotIdx];
