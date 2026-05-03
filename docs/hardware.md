@@ -499,6 +499,33 @@ Factory models still on the module (e.g. `qwen2.5-0.5B-prefill-20e`, KWS models,
 
 ---
 
+## What the firmware tells the module at runtime
+
+The packages above only decide what the module is *capable of*. Which model, language and wake word actually get used is configured by the CoreS3 firmware on every boot via `kws.setup` / `vad.setup` / `whisper.setup` / `llm.setup` over UART. Defaults sit in [`../src/voice_pipeline.h`](../src/voice_pipeline.h):
+
+| Firmware field    | Current value         | Meaning |
+|---|---|---|
+| `wake_word`       | `"MUFFIN"`            | Word the KWS service listens for. Sherpa-KWS supports arbitrary words; just change the string. |
+| `whisper_language`| `"de"`                | ISO code Whisper uses for ASR. `"en"` works out of the box because `whisper-base` is multilingual. |
+| `whisper_model`   | `"whisper-base"`      | Model identifier. Maps to the `.deb` filename without the version: `llm-model-whisper-base_*.deb` → `whisper-base`. Switching to `"whisper-tiny"` works if the corresponding model is installed. |
+| `llm_model`       | `"qwen3-0.6B-ax630c"` | Same naming rule: `llm-model-qwen3-0.6B-ax630c_*.deb` → `qwen3-0.6B-ax630c`. The 1.5B-Int4 model identifier (`qwen2.5-1.5B-Int4-ax630c`) loads on paper but the package is broken — see the gotcha below. |
+| `llm_max_tokens`  | `64`                  | Hard cap; raising it doesn't help with Qwen3 thinking-mode (see the dedicated gotcha). |
+| `mic_volume`      | `0.7`                 | Capture-side gain, sent to `audio.setup`. |
+
+**The system prompt** (sent to `llm.setup` as `cfg.prompt`) lives in [`../src/main.cpp`](../src/main.cpp) at the top, in the `SYSTEM_PROMPT` const. It frames Qwen3 as a **tag classifier**: input is a German or English sentence, output is 1–3 lowercase comma-separated tags from a closed list of 23 (`eat`, `pet`, `love`, `laugh`, `sleep`, `wake`, `greet`, `sad`, `startle`, `sing`, `dance`, `ball`, `mouse`, `rattle`, `butterfly`, `plush`, `movie`, `game`, `internet`, `social`, `friends`, `radio`, `idle`). The classifier output is mapped to in-firmware actions by `applyVoiceTag()`. The closed-vocabulary framing is what keeps the 0.6B model usable — open-ended generation hallucinates code or invents German on unclear input.
+
+### Worked example: switch Whisper from German to English
+
+Edit [`../src/voice_pipeline.h`](../src/voice_pipeline.h):
+
+```cpp
+const char* whisper_language = "en";   // was "de"
+```
+
+Reflash the CoreS3 (`pio run -e cores3 -t upload`). Nothing changes on the LLM module side — Whisper-Base is multilingual, the language code is just sent in the next `whisper.setup`.
+
+---
+
 ## Gotcha: Qwen2.5-1.5B-Int4 doesn't load (tokenizer missing)
 
 The package `llm-model-qwen2.5-1.5B-Int4-ax630c v0.4` is **incomplete**: it lacks the `tokenizer/` subdirectory.
