@@ -1,0 +1,113 @@
+name: Module-LLM lint
+
+# Static checks for the Module-LLM setup script + manifest. The actual
+# install workflow needs physical Axera hardware connected via USB, so
+# this job intentionally doesn't run dpkg / systemctl / adb. It catches
+# the stuff that *can* be caught statically: shell-syntax bugs, package
+# names drifting between the script and the manifest, and basic file
+# layout sanity.
+
+on:
+  push:
+    paths:
+      - 'scripts/setup-module-llm.sh'
+      - 'pkgs/MANIFEST.txt'
+      - '.github/workflows/module-llm-lint.yml'
+  pull_request:
+    paths:
+      - 'scripts/setup-module-llm.sh'
+      - 'pkgs/MANIFEST.txt'
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: shellcheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: scripts
+          severity: warning
+
+      - name: Verify manifest is well-formed
+        run: |
+          set -euo pipefail
+          MANIFEST=pkgs/MANIFEST.txt
+
+          # Strip comments + blanks, then validate every entry has the
+          # expected `subdir/filename` shape.
+          mapfile -t entries < <(grep -v '^#' "$MANIFEST" | grep -v '^[[:space:]]*$')
+
+          if [ "${#entries[@]}" -eq 0 ]; then
+            echo "::error file=$MANIFEST::manifest is empty after stripping comments"
+            exit 1
+          fi
+
+          fail=0
+          for e in "${entries[@]}"; do
+            if [[ ! "$e" =~ ^(framework|services|models|audio)/[a-zA-Z0-9_.+-]+\.(deb|wav)$ ]]; then
+              echo "::error file=$MANIFEST::malformed entry: '$e'"
+              echo "  expected: <framework|services|models|audio>/<filename>.<deb|wav>"
+              fail=1
+            fi
+          done
+          [ $fail -eq 0 ] || exit 1
+
+          echo "Manifest entries (${#entries[@]}):"
+          printf '  %s\n' "${entries[@]}"
+
+      - name: Verify script <-> manifest consistency
+        run: |
+          set -euo pipefail
+
+          # Every basename mentioned in a `dpkg -i ... /root/pkgs/...` line
+          # must be in the manifest. Vice versa, every .deb in the manifest
+          # should be referenced (or warn). Audio files aren't dpkg-installed,
+          # so we only enforce one direction for them.
+          script_debs=$(grep -oE '/root/pkgs/[A-Za-z0-9_.+-]+\.deb' scripts/setup-module-llm.sh \
+                         | sed 's|/root/pkgs/||' \
+                         | sort -u)
+          manifest_basenames_deb=$(grep -v '^#' pkgs/MANIFEST.txt \
+                                    | grep -E '\.deb$' \
+                                    | xargs -n1 basename \
+                                    | sort -u)
+
+          fail=0
+          while IFS= read -r ref; do
+            [ -z "$ref" ] && continue
+            if ! grep -qFx "$ref" <<<"$manifest_basenames_deb"; then
+              echo "::error file=scripts/setup-module-llm.sh::script references '$ref' but it's not in pkgs/MANIFEST.txt"
+              fail=1
+            fi
+          done <<<"$script_debs"
+
+          while IFS= read -r entry; do
+            [ -z "$entry" ] && continue
+            if ! grep -qFx "$entry" <<<"$script_debs"; then
+              echo "::warning file=pkgs/MANIFEST.txt::manifest lists '$entry' but the script doesn't dpkg-install it"
+            fi
+          done <<<"$manifest_basenames_deb"
+
+          [ $fail -eq 0 ] || exit 1
+          echo "Script and manifest agree on the .deb set."
+
+      - name: Verify the tracked silent wake-up WAV exists
+        run: |
+          set -euo pipefail
+          WAV=pkgs/audio/silent_wakeup.wav
+          if [ ! -f "$WAV" ]; then
+            echo "::error::$WAV is referenced by the setup script but not present in the repo"
+            exit 1
+          fi
+          # A 16 kHz / mono / 16-bit WAV is small. Sanity-check size: > 40 B
+          # (header) and < 50 KB (the original is ~1.5 KB, far below this cap).
+          size=$(stat -c%s "$WAV")
+          if [ "$size" -lt 40 ] || [ "$size" -gt 51200 ]; then
+            echo "::error::$WAV size $size bytes looks wrong (expected 40 B – 50 KB for a short PCM WAV)"
+            exit 1
+          fi
+          echo "$WAV: $size bytes — looks plausible."

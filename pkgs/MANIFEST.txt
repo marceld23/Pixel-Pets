@@ -1,0 +1,15 @@
+# Files that scripts/setup-module-llm.sh expects under pkgs/.
+# The .deb blobs are gitignored; download them from the M5Stack APT repo
+# (see docs/setup-muffin.md → "Reference: M5Stack APT repository") and drop
+# them into the matching subfolder. CI verifies that every basename a
+# `dpkg -i` command references in setup-module-llm.sh appears in this list.
+
+framework/lib-llm_1.8-m5stack1_arm64.deb
+framework/llm-sys_1.6-m5stack1_arm64.deb
+framework/llm-llm_1.8-m5stack1_arm64.deb
+services/llm-vad_1.5.deb
+services/llm-whisper_1.5.deb
+models/llm-model-silero-vad_0.4.deb
+models/llm-model-whisper-base_0.4.deb
+models/llm-model-qwen3-0.6B-ax630c_0.4.deb
+audio/silent_wakeup.wav

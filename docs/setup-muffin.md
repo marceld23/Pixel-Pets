@@ -67,68 +67,27 @@ adb devices
 
 If nothing shows up, check Device Manager (Windows) for `AX620B-ADB`. ADB is root by default — no password.
 
-### 2b. Push the package set + install
+### 2b. Run the setup script
 
-All required `.deb` files are pre-staged under [`../pkgs/`](../pkgs/) in this repo. Run from the repo root:
+All required `.deb` files are pre-staged under [`../pkgs/`](../pkgs/) in this repo (the blobs are gitignored — download from the [M5Stack APT repo](#reference-m5stack-apt-repository) into the matching subfolder before running). Then from the repo root:
 
 ```bash
-# Path to the `adb` executable. If it's already on your PATH (`adb` works
-# in your shell), leave this as `adb`. Otherwise point it at your install:
-#   Windows:  winget install Google.PlatformTools  (then `adb` is on PATH after a new shell)
-#   macOS:    brew install android-platform-tools
-#   Linux:    apt install adb  (or distro equivalent)
-ADB=adb
-
-cd pkgs
-
-# 1) Upload all packages — they end up flat under /root/pkgs/, dpkg works
-#    with the bare filenames afterwards.
-for f in framework/lib-llm_1.8-m5stack1_arm64.deb \
-         framework/llm-sys_1.6-m5stack1_arm64.deb \
-         framework/llm-llm_1.8-m5stack1_arm64.deb \
-         services/llm-vad_1.5.deb \
-         services/llm-whisper_1.5.deb \
-         models/llm-model-silero-vad_0.4.deb \
-         models/llm-model-whisper-base_0.4.deb \
-         models/llm-model-qwen3-0.6B-ax630c_0.4.deb \
-         audio/silent_wakeup.wav; do
-    MSYS_NO_PATHCONV=1 "$ADB" push "$f" /root/pkgs/
-done
-
-# 2) Framework upgrade (lib-llm + llm-sys + llm-llm)
-MSYS_NO_PATHCONV=1 "$ADB" shell "cd /root/pkgs && \
-    dpkg -i lib-llm_1.8-m5stack1_arm64.deb && \
-    dpkg -i llm-sys_1.6-m5stack1_arm64.deb && \
-    dpkg -i llm-llm_1.8-m5stack1_arm64.deb && \
-    systemctl daemon-reload && \
-    systemctl restart llm-sys llm-llm"
-
-# 3) Whisper + VAD service binaries + their model files
-MSYS_NO_PATHCONV=1 "$ADB" shell "cd /root/pkgs && \
-    dpkg -i llm-vad_1.5.deb && \
-    dpkg -i llm-whisper_1.5.deb && \
-    dpkg -i --force-depends llm-model-silero-vad_0.4.deb && \
-    dpkg -i --force-depends llm-model-whisper-base_0.4.deb && \
-    systemctl daemon-reload && \
-    systemctl start llm-vad llm-whisper"
-
-# 4) Qwen3 LLM model
-MSYS_NO_PATHCONV=1 "$ADB" shell "dpkg -i --force-depends /root/pkgs/llm-model-qwen3-0.6B-ax630c_0.4.deb"
-
-# 5) Permanently disable TTS services (CoreS3 plays its own sounds)
-MSYS_NO_PATHCONV=1 "$ADB" shell "systemctl stop llm-tts llm-melotts; \
-    systemctl disable llm-tts llm-melotts"
-
-# 6) Silence the default wake-up WAV (pre-recorded "Hi" voice)
-MSYS_NO_PATHCONV=1 "$ADB" shell "cp /opt/m5stack/data/audio/wakeup_en_us.wav /opt/m5stack/data/audio/wakeup_en_us.wav.bak"
-MSYS_NO_PATHCONV=1 "$ADB" push audio/silent_wakeup.wav /opt/m5stack/data/audio/wakeup_en_us.wav
-
-# 7) Verify
-MSYS_NO_PATHCONV=1 "$ADB" shell "systemctl is-active llm-sys llm-llm llm-audio llm-kws llm-vad llm-whisper; \
-    dpkg -l | grep -E 'lib-llm|llm-llm|llm-sys|llm-vad|llm-whisper|qwen3' | awk '{print \$2, \$3}'"
+scripts/setup-module-llm.sh
 ```
 
-The last command should print all six services as `active` and the package versions you just installed.
+The script is idempotent (safe to re-run) and walks through seven phases:
+
+1. **Verify ADB** — fails fast if `adb devices` doesn't show `axera-ax620e`.
+2. **Push files** to `/root/pkgs/` on the module — every entry from [`pkgs/MANIFEST.txt`](../pkgs/MANIFEST.txt).
+3. **Framework upgrade** — `dpkg -i` lib-llm 1.8, llm-sys 1.6, llm-llm 1.8; restart llm-sys + llm-llm.
+4. **Whisper + VAD** — install service binaries (`llm-vad`, `llm-whisper`) and model files (silero-vad, whisper-base, both with `--force-depends` since model packages declare unmet `lib-llm` deps but contain only data).
+5. **Qwen3-0.6B** — model package with `--force-depends`.
+6. **Disable TTS services** — `systemctl stop && disable llm-tts llm-melotts` so they don't fight the CoreS3 speaker.
+7. **Silence the wake-up WAV** — back up `/opt/m5stack/data/audio/wakeup_en_us.wav` to `.wav.bak` (only on first run, never overwriting an existing backup) then replace with the silent 50 ms WAV in `pkgs/audio/`.
+
+After the seven phases the script verifies each of the six expected services (`llm-sys`, `llm-llm`, `llm-audio`, `llm-kws`, `llm-vad`, `llm-whisper`) is `active` and prints the installed package versions. Non-zero exit if anything's wrong, with a `journalctl` hint.
+
+Override the `adb` binary location with `ADB=/path/to/adb scripts/setup-module-llm.sh` if it's not on PATH (Windows after `winget install Google.PlatformTools`, you may need a fresh shell first).
 
 ### 2c. Plug the USB-C back into the CoreS3
 
