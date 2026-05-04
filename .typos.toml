@@ -22,9 +22,15 @@ extend-ignore-identifiers-re = [
   "^iy$",     # face.cpp: int ix, iy = …
   "^ful$",    # 3-char NVS keys (hap / eng / ful for happiness / energy / fullness)
   "^lck$",    # lockout NVS key
-  "^bck$",    # I2S bit-clock pin name (pin_bck in webradio.cpp)
-  "^PN$",     # typos splits "PNG"/"PNGs" tokens and flags the "PN" half
 ]
+
+# Word-level dictionary overrides — extend-ignore-words-re is matched
+# against tokens AFTER typos's own dictionary lookup, so to override
+# a built-in typo entry (e.g. typos treats "PN" as a typo of "ON")
+# we have to mark the word as correct via extend-words instead.
+[default.extend-words]
+PN = "PN"     # part of "PNGs" / "PNG" tokenisation
+bck = "bck"   # I2S bit-clock pin name (pin_bck in webradio.cpp)
 
 # Whole words. Single regex with (?i) for case-insensitive so "Ein",
 # "EIN", "ein" all match. Anchored ^...$ so we don't accidentally match
