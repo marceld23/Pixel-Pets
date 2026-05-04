@@ -45,15 +45,16 @@ jobs:
         with:
           # `--no-progress` keeps the log readable; `--cache` reuses the
           # restored .lycheecache to skip unchanged URLs across runs.
-          # Excluded patterns: mailto, mDNS-local hostnames the pet
-          # exposes (won't resolve from the runner), and the YouTube
-          # thumbnail URLs which sometimes return transient 5xx.
+          # Mail (mailto:) is excluded by default since lychee 0.18 —
+          # the old `--exclude-mail` flag was removed and crashes the
+          # CLI if passed. Excluded patterns: mDNS-local hostnames the
+          # pet exposes (won't resolve from the runner), and the
+          # YouTube thumbnail URLs which sometimes 503 transiently.
           args: |
             --verbose
             --no-progress
             --cache
             --max-cache-age 7d
-            --exclude-mail
             --exclude '^https://[^/]*-setup\.local'
             --exclude '^https://img\.youtube\.com'
             './**/*.md'
@@ -62,8 +63,27 @@ jobs:
           format: markdown
           output: lychee-report.md
 
-      - name: Open / update issue when links are broken
+      # Defensive guard: only open an issue if lychee actually wrote a
+      # non-empty report. A non-zero exit alone isn't enough — if the
+      # CLI itself crashes (bad flag, network failure before any check
+      # ran) the report file stays empty / missing and the issue body
+      # would be useless. Without this guard a single config typo
+      # spams the tracker with empty "Link check found broken URLs"
+      # issues (cf. #2 / #8–#13 from the initial wiring).
+      - name: Confirm report is non-empty
+        id: report
         if: steps.lychee.outputs.exit_code != 0
+        run: |
+          if [ -s lychee-report.md ]; then
+            echo "has_findings=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::lychee exited non-zero but produced no report — likely a CLI / config error, not a real broken link. Check the run log."
+            echo "has_findings=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+      - name: Open / update issue when links are broken
+        if: steps.report.outputs.has_findings == 'true'
         uses: peter-evans/create-issue-from-file@v6
         with:
           title: "Link check found broken URLs"
