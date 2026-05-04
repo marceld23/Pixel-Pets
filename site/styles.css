@@ -594,7 +594,13 @@ pre code { background: none; padding: 0; color: inherit; }
      as "left-aligned" against the narrower h2/section-lead above. */
   grid-template-columns: repeat(auto-fit, minmax(220px, 260px));
   gap: 14px;
-  margin: 20px 0 32px;
+  /* Keep the auto left/right margins from `.section-alt > *` so the grid
+     sits centered in the section. The earlier `margin: 20px 0 32px`
+     shorthand silently zeroed the horizontal margins and pinned the grid
+     to the left content edge — which is exactly what produced the visible
+     left-shift the user reported on a wide viewport. */
+  margin-top: 20px;
+  margin-bottom: 32px;
   justify-content: center;
 }
 .difficulty-card {
