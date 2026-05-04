@@ -12,7 +12,7 @@ Architecture and gameplay of the virtual pets. **Three pet variants** plus an op
 
 Pip is **not** a fourth pet — it's a pocket-sized companion device that pairs with one of the three pets via ESP-NOW (see [Pip companion device](#pip-companion-device-pip-mode) below). Out of radio range it falls back to a small bear face so it's never just a brick.
 
-Hardware setup, flash workflow and module-specific gotchas: see [`hardware.md`](hardware.md). Sound asset specs: [`sound_assets.md`](sound_assets.md). Module / build / state architecture: [`architecture.md`](architecture.md).
+Hardware setup, flash workflow and module-specific gotchas: per-pet guides under `docs/`, indexed by [`hardware.md`](hardware.md) ([goo-goo](setup-goo-goo.md) · [visu](setup-visu.md) · [pip](setup-pip.md) · [muffin](setup-muffin.md)). Sound asset specs: [`sound_assets.md`](sound_assets.md). Module / build / state architecture: [`architecture.md`](architecture.md).
 
 ---
 

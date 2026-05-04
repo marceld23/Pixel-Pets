@@ -147,16 +147,16 @@ Good places to start hacking are new scenes, mini-games, face animations, sounds
 
 ## Fastest start
 
-The easiest way to try Pixel Pets depends on the hardware you already have:
+Sorted from easiest to hardest setup. Each row links to a self-contained per-pet guide that covers everything (USB driver, env, flashing quirks, gotchas):
 
-| If you have... | Start with... | Why |
-|---|---|---|
-| **M5Stack Core2** | `core2` / Goo-Goo | Simple button-based pet, no extra module required |
-| **M5Stack CoreS3** | `visu` | Full-screen touch pet with camera features, no LLM module required |
-| **CoreS3 + Module-LLM** | `cores3` / Muffin | Full flagship experience with offline voice commands |
-| **M5StickC PLUS2** | `pip` or `pip-s3` | Tiny companion accessory for sending treats and gestures |
+| Pet | Hardware | Difficulty | Setup guide |
+|---|---|---|---|
+| **Goo-Goo** | M5Stack Core2 | 🟢 Easiest — plug, flash, run | [`docs/setup-goo-goo.md`](docs/setup-goo-goo.md) |
+| **Visu** | M5Stack CoreS3 | 🟢 Easy — same idea on CoreS3 | [`docs/setup-visu.md`](docs/setup-visu.md) |
+| **Pip** | M5StickC PLUS2 (ESP32-PICO or S3 rev.) | 🟡 Medium — the S3 revision needs a manual download-mode procedure | [`docs/setup-pip.md`](docs/setup-pip.md) |
+| **Muffin** | M5Stack CoreS3 + Module-LLM | 🔴 Advanced — extra hardware + ADB / Linux setup on the LLM module (Whisper, Qwen3, gotchas) | [`docs/setup-muffin.md`](docs/setup-muffin.md) |
 
-If you are new to the project, start with one main pet first. Pip is optional and becomes useful once you already have a bigger home pet running.
+If you're new to the project, start with **Goo-Goo** (if you have a Core2) or **Visu** (if you have a CoreS3) — both are roughly an hour from unbox to running pet. Muffin adds another evening for the Module-LLM setup. Pip is optional and only useful once a bigger home pet is running.
 
 ## Build & flash
 
@@ -170,8 +170,7 @@ pio run -e pip-s3                              # Pip accessory (StickC PLUS2 S3)
 pio run -e cores3 -e visu -e core2 -e pip-s3   # build all
 ```
 
-Detailed hardware/flash notes (COM-port conflicts, Module-LLM setup, gotchas):
-👉 [`docs/hardware.md`](docs/hardware.md)
+For per-pet setup details (USB driver, env, flashing quirks, Module-LLM workflow), see the [Fastest start](#fastest-start) table above — every pet has its own dedicated guide under [`docs/setup-*.md`](docs/).
 
 ## Repository layout
 
@@ -199,7 +198,11 @@ src/
 docs/
   concept.md               ← gameplay & high-level design
   architecture.md          ← software architecture (modules, build flow, state)
-  hardware.md              ← hardware setup + flashing + Module-LLM workflow
+  hardware.md              ← per-pet setup index + capability matrix
+  setup-goo-goo.md         ← Core2 (Goo-Goo) setup guide — easiest
+  setup-visu.md            ← CoreS3 (Visu) setup guide — easy
+  setup-pip.md             ← StickC PLUS2 (Pip) setup guide — medium, S3 download-mode
+  setup-muffin.md          ← CoreS3 + Module-LLM (Muffin) setup guide — advanced; Module-LLM ADB workflow + Qwen3 gotchas
   sound_assets.md          ← WAV sample spec and trigger map
 
 site/                      ← GitHub Pages landing page (index.html + scripts + assets)
@@ -222,7 +225,11 @@ LICENSE                    ← MIT
 
 - [`docs/concept.md`](docs/concept.md) — how the pet ticks: needs, input (touch / IMU / hard buttons / voice / camera), world, mini-games, parental session limit, persistence.
 - [`docs/architecture.md`](docs/architecture.md) — software architecture: module overview, build-target system, state model, render pipeline.
-- [`docs/hardware.md`](docs/hardware.md) — per-target hardware setup, build commands, COM-port notes, Module-LLM ADB workflow, Qwen3 quirks.
+- [`docs/hardware.md`](docs/hardware.md) — overview index with the build-target capability matrix; links to the per-pet setup guides:
+  - [`docs/setup-goo-goo.md`](docs/setup-goo-goo.md) — Core2 (🟢 easiest)
+  - [`docs/setup-visu.md`](docs/setup-visu.md) — CoreS3 (🟢 easy)
+  - [`docs/setup-pip.md`](docs/setup-pip.md) — StickC PLUS2 (🟡 medium, S3 download-mode dance)
+  - [`docs/setup-muffin.md`](docs/setup-muffin.md) — CoreS3 + Module-LLM (🔴 advanced, includes the ADB workflow + Qwen3 gotchas)
 - [`docs/sound_assets.md`](docs/sound_assets.md) — WAV spec, sample list, trigger map (Pip uses tone sequences instead).
 
 ## Continuous integration

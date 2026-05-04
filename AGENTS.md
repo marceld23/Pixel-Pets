@@ -19,7 +19,7 @@ If something here contradicts the user's explicit instruction in the conversatio
 
 The umbrella project name is **Pixel Pets**. The repo was originally named `muffin` (the flagship pet) and may still be called that locally.
 
-For the gameplay model see [`docs/concept.md`](docs/concept.md), for the software architecture [`docs/architecture.md`](docs/architecture.md), for hardware setup [`docs/hardware.md`](docs/hardware.md).
+For the gameplay model see [`docs/concept.md`](docs/concept.md), for the software architecture [`docs/architecture.md`](docs/architecture.md). Hardware setup is per-pet — start at [`docs/hardware.md`](docs/hardware.md) which indexes [`setup-goo-goo.md`](docs/setup-goo-goo.md), [`setup-visu.md`](docs/setup-visu.md), [`setup-pip.md`](docs/setup-pip.md) and [`setup-muffin.md`](docs/setup-muffin.md).
 
 ---
 
@@ -46,7 +46,7 @@ For maximum speed, fire each `pio run -e <env>` as an independent background tas
 pio run -e <env> -t upload --upload-port COM<N>
 ```
 
-`pio device list` shows attached COM ports. CoreS3 normally enumerates as `303A:1001`, Core2 as a CH9102 bridge, StickC PLUS2 (PICO) as a CH9102 too, StickC PLUS2 S3 alternates between `303A:8120` (normal) and `303A:1001` (download mode — hold BtnA + reset). See [`docs/hardware.md`](docs/hardware.md) for the full StickC-S3 download-mode dance.
+`pio device list` shows attached COM ports. CoreS3 normally enumerates as `303A:1001`, Core2 as a CH9102 bridge, StickC PLUS2 (PICO) as a CH9102 too, StickC PLUS2 S3 alternates between `303A:8120` (normal) and `303A:1001` (download mode — hold BtnA + reset). See [`docs/setup-pip.md`](docs/setup-pip.md) for the full StickC-S3 download-mode dance.
 
 Two devices on different ports can be flashed in parallel — `pio run -e core2 -t upload --upload-port COM3` and `... --upload-port COM7` simultaneously work fine.
 
@@ -173,7 +173,7 @@ While the radio is playing, [`src/voice_pipeline.cpp`](src/voice_pipeline.cpp) `
 
 ## Module-LLM (Muffin only) — Qwen3 quirks
 
-See [`docs/hardware.md`](docs/hardware.md) for the full Module-LLM workflow (ADB, .deb installs, framework upgrade). Two non-obvious behaviours that bit us:
+See [`docs/setup-muffin.md`](docs/setup-muffin.md) for the full Module-LLM workflow (ADB, .deb installs, framework upgrade). Two non-obvious behaviours that bit us:
 
 - **Qwen3 thinking mode**: the model emits a `<think>...</think>` block by default. With small `max_token_len`, the answer is truncated mid-thought and never reaches the tag. Workarounds in the firmware: `cfg.max_token_len = 64`, suffix user input with `" /no_think"`, strip `<think>...</think>` before keyword matching.
 - **Whisper-first bypass**: about 80 % of common commands match a German keyword directly on the Whisper transcript. Skip the LLM entirely for those — saves ~1–2 s and avoids the Qwen3 hallucinations (date spam, code blocks). LLM is fallback only.
@@ -278,7 +278,7 @@ If you can't test on hardware, say so explicitly in your reply rather than claim
 | WiFi.setSleep(false) silently fails after esp_wifi_stop | net.cpp friendsBegin | use `esp_wifi_set_ps(WIFI_PS_NONE)` + log result |
 | Single-target build hides another target's break | local dev | run all four envs (or at least core2 + cores3 + pip-s3) |
 | Friends item lost despite RF working | net.cpp Sending | confirm `WIFI_PROTOCOL_LR` is set in `friendsBegin` |
-| StickC-S3 won't flash, "Write timeout" | hardware | hold BtnA + reset to enter download mode (see `docs/hardware.md`) |
+| StickC-S3 won't flash, "Write timeout" | hardware | hold BtnA + reset to enter download mode (see [`docs/setup-pip.md`](docs/setup-pip.md)) |
 | `pio device monitor` holds the COM port | local dev | close monitor before flashing the same port |
 
 ---
@@ -303,7 +303,8 @@ If you can't test on hardware, say so explicitly in your reply rather than claim
 |---|---|
 | understand the gameplay | [`docs/concept.md`](docs/concept.md) |
 | understand the codebase layout | [`docs/architecture.md`](docs/architecture.md) |
-| flash, see COM-port quirks, set up the LLM module | [`docs/hardware.md`](docs/hardware.md) |
+| flash a specific pet | [`docs/hardware.md`](docs/hardware.md) → per-pet guide ([goo-goo](docs/setup-goo-goo.md) / [visu](docs/setup-visu.md) / [pip](docs/setup-pip.md) / [muffin](docs/setup-muffin.md)) |
+| set up the Module-LLM | [`docs/setup-muffin.md`](docs/setup-muffin.md) |
 | add a new sound | [`docs/sound_assets.md`](docs/sound_assets.md), [`src/sounds/`](src/sounds/) |
 | change a UI string | [`src/i18n.h`](src/i18n.h) + [`src/i18n.cpp`](src/i18n.cpp) (both!) |
 | add a feature gate | [`src/target_caps.h`](src/target_caps.h) |

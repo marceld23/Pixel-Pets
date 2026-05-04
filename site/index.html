@@ -447,33 +447,98 @@
 <section id="getstarted" class="section section-alt">
   <h2 data-en="Get started" data-de="Loslegen">Get started</h2>
 
+  <p class="section-lead"
+     data-en="Setup difficulty differs a lot between pets — Goo-Goo is the easiest, Muffin the most involved (it includes a Linux-on-the-LLM-module step). Pick the dedicated guide that matches the hardware you have:"
+     data-de="Der Setup-Aufwand unterscheidet sich stark — Goo-Goo ist am einfachsten, Muffin am aufwändigsten (mit Linux-Setup auf dem Module-LLM). Wähle die Anleitung, die zu deiner Hardware passt:">
+    Setup difficulty differs a lot between pets — Goo-Goo is the easiest, Muffin the most involved (it includes a Linux-on-the-LLM-module step). Pick the dedicated guide that matches the hardware you have:</p>
+
+  <div class="difficulty-grid">
+    <article class="difficulty-card">
+      <span class="difficulty-badge">🟢</span>
+      <h3>Goo-Goo</h3>
+      <p class="difficulty-label"
+         data-en="Easiest · Core2" data-de="Am einfachsten · Core2">Easiest · Core2</p>
+      <p class="difficulty-hint"
+         data-en="Plug in USB, flash, run. ~1 hour."
+         data-de="Anstecken, flashen, läuft. ~1 Stunde.">Plug in USB, flash, run. ~1 hour.</p>
+      <a class="difficulty-link"
+         href="https://github.com/marceld23/Pixel-Pets/blob/main/docs/setup-goo-goo.md"
+         data-en="setup-goo-goo.md →"
+         data-de="setup-goo-goo.md →">setup-goo-goo.md →</a>
+    </article>
+    <article class="difficulty-card">
+      <span class="difficulty-badge">🟢</span>
+      <h3>Visu</h3>
+      <p class="difficulty-label"
+         data-en="Easy · CoreS3" data-de="Einfach · CoreS3">Easy · CoreS3</p>
+      <p class="difficulty-hint"
+         data-en="Same idea on CoreS3 hardware."
+         data-de="Selbes Prinzip auf dem CoreS3.">Same idea on CoreS3 hardware.</p>
+      <a class="difficulty-link"
+         href="https://github.com/marceld23/Pixel-Pets/blob/main/docs/setup-visu.md"
+         data-en="setup-visu.md →"
+         data-de="setup-visu.md →">setup-visu.md →</a>
+    </article>
+    <article class="difficulty-card">
+      <span class="difficulty-badge">🟡</span>
+      <h3>Pip</h3>
+      <p class="difficulty-label"
+         data-en="Medium · StickC PLUS2"
+         data-de="Mittel · StickC PLUS2">Medium · StickC PLUS2</p>
+      <p class="difficulty-hint"
+         data-en="S3 revision needs a manual download-mode procedure."
+         data-de="S3-Variante braucht einen manuellen Download-Mode-Trick.">S3 revision needs a manual download-mode procedure.</p>
+      <a class="difficulty-link"
+         href="https://github.com/marceld23/Pixel-Pets/blob/main/docs/setup-pip.md"
+         data-en="setup-pip.md →"
+         data-de="setup-pip.md →">setup-pip.md →</a>
+    </article>
+    <article class="difficulty-card">
+      <span class="difficulty-badge">🔴</span>
+      <h3>Muffin</h3>
+      <p class="difficulty-label"
+         data-en="Advanced · CoreS3 + Module-LLM"
+         data-de="Fortgeschritten · CoreS3 + Module-LLM">Advanced · CoreS3 + Module-LLM</p>
+      <p class="difficulty-hint"
+         data-en="Plus a one-time Linux setup on the LLM module (ADB, Whisper, Qwen3)."
+         data-de="Plus einmaliges Linux-Setup auf dem LLM-Modul (ADB, Whisper, Qwen3).">Plus a one-time Linux setup on the LLM module (ADB, Whisper, Qwen3).</p>
+      <a class="difficulty-link"
+         href="https://github.com/marceld23/Pixel-Pets/blob/main/docs/setup-muffin.md"
+         data-en="setup-muffin.md →"
+         data-de="setup-muffin.md →">setup-muffin.md →</a>
+    </article>
+  </div>
+
   <ol class="steps">
     <li>
-      <h3 data-en="1. Pick a board" data-de="1. Board aussuchen">1. Pick a board</h3>
-      <p data-en="The most polished experience is on the M5Stack CoreS3 with the Module-LLM (Muffin). On a budget, an M5Stack Core2 (Goo-Goo) is enough. For a pocket-sized stick, get the M5StickC Plus 2 (Pip)."
-         data-de="Das vollständigste Erlebnis liefert der M5Stack CoreS3 mit dem Module-LLM (Muffin). Günstiger geht's mit dem M5Stack Core2 (Goo-Goo). Mobil im Hosentaschen-Format: M5StickC Plus 2 (Pip).">
-        The most polished experience is on the M5Stack CoreS3 with the Module-LLM (Muffin). On a budget, an M5Stack Core2 (Goo-Goo) is enough. For a pocket-sized stick, get the M5StickC Plus 2 (Pip).</p>
-    </li>
-    <li>
-      <h3 data-en="2. Clone the repo" data-de="2. Repo clonen">2. Clone the repo</h3>
+      <h3 data-en="1. Clone the repo and install PlatformIO"
+          data-de="1. Repo clonen + PlatformIO installieren">1. Clone the repo and install PlatformIO</h3>
 <pre><code>git clone https://github.com/marceld23/Pixel-Pets.git
-cd pixel-pets</code></pre>
+cd Pixel-Pets
+pip install platformio        # if you don't have it</code></pre>
     </li>
     <li>
-      <h3 data-en="3. Install PlatformIO" data-de="3. PlatformIO installieren">3. Install PlatformIO</h3>
-      <p data-en="Either as a VSCode extension or as a CLI:"
-         data-de="Entweder als VSCode-Extension oder als CLI:">Either as a VSCode extension or as a CLI:</p>
-<pre><code>pip install platformio</code></pre>
+      <h3 data-en="2. (Muffin only) Configure the Module-LLM"
+          data-de="2. (Nur Muffin) Module-LLM konfigurieren">2. (Muffin only) Configure the Module-LLM</h3>
+      <p data-en="One-time Linux setup on the Module-LLM via ADB: install Whisper-Base, Qwen3-0.6B, disable TTS, silence the wake-up WAV. Skip this step for Goo-Goo, Visu and Pip."
+         data-de="Einmaliges Linux-Setup auf dem Module-LLM via ADB: Whisper-Base + Qwen3-0.6B installieren, TTS abschalten, Wake-WAV stillegen. Bei Goo-Goo, Visu und Pip einfach überspringen.">
+        One-time Linux setup on the Module-LLM via ADB: install Whisper-Base, Qwen3-0.6B, disable TTS, silence the wake-up WAV. Skip this step for Goo-Goo, Visu and Pip.</p>
+      <p>
+        <a href="https://github.com/marceld23/Pixel-Pets/blob/main/docs/setup-muffin.md#step-2-configure-the-module-llm"
+           data-en="Full ADB workflow → setup-muffin.md, Step 2"
+           data-de="Vollständiger ADB-Workflow → setup-muffin.md, Schritt 2">Full ADB workflow → setup-muffin.md, Step 2</a>
+      </p>
     </li>
     <li>
-      <h3 data-en="4. Build and flash" data-de="4. Bauen und flashen">4. Build and flash</h3>
-<pre><code>pio run -e cores3 -t upload         # Muffin (CoreS3 + Module-LLM)
-pio run -e visu   -t upload         # Visu   (CoreS3 alone)
-pio run -e core2  -t upload         # Goo-Goo (Core2)
-pio run -e pip    -t upload         # Pip    (StickC Plus 2)</code></pre>
-      <p data-en="Detailed hardware notes (COM-port quirks, Module-LLM ADB workflow, Qwen3 pitfalls) are in the docs:"
-         data-de="Ausführliche Hardware-Hinweise (COM-Port-Quirks, Module-LLM-ADB-Workflow, Qwen3-Stolpersteine) stehen in der Doku:">
-        Detailed hardware notes (COM-port quirks, Module-LLM ADB workflow, Qwen3 pitfalls) are in the docs:</p>
+      <h3 data-en="3. Build and flash"
+          data-de="3. Bauen und flashen">3. Build and flash</h3>
+<pre><code>pio run -e core2  -t upload         # Goo-Goo
+pio run -e visu   -t upload         # Visu
+pio run -e pip    -t upload         # Pip (PICO) — pip-s3 for S3 revision
+pio run -e cores3 -t upload         # Muffin (after Step 2)</code></pre>
+      <p data-en="Per-pet flashing details (USB driver, COM-port detection, S3 download-mode procedure) are in the dedicated guides linked above. The repo's docs index has the rest:"
+         data-de="Pet-spezifische Flash-Details (USB-Treiber, COM-Port-Erkennung, S3-Download-Mode) stehen in den jeweiligen Guides oben. Die Doku-Übersicht im Repo hat den Rest:">
+        Per-pet flashing details (USB driver, COM-port detection, S3 download-mode procedure) are in the dedicated guides linked above. The repo's docs index has the rest:</p>
       <p>
         <a href="https://github.com/marceld23/Pixel-Pets/blob/main/docs/hardware.md">docs/hardware.md</a> ·
         <a href="https://github.com/marceld23/Pixel-Pets/blob/main/docs/architecture.md">architecture.md</a> ·
