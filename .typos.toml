@@ -24,24 +24,24 @@ extend-ignore-identifiers-re = [
   "^lck$",    # lockout NVS key
 ]
 
-# Word-level dictionary overrides — extend-ignore-words-re is matched
-# against tokens AFTER typos's own dictionary lookup, so to override
-# a built-in typo entry (e.g. typos treats "PN" as a typo of "ON")
-# we have to mark the word as correct via extend-words instead.
-[default.extend-words]
-PN = "PN"     # part of "PNGs" / "PNG" tokenisation
-bck = "bck"   # I2S bit-clock pin name (pin_bck in webradio.cpp)
-
 # Whole words. Single regex with (?i) for case-insensitive so "Ein",
 # "EIN", "ein" all match. Anchored ^...$ so we don't accidentally match
 # "fein" or "deinem" against "ein".
 extend-ignore-words-re = [
   # German function words + common verbs/adjectives that appear in
   # bilingual docs and commit messages
-  "(?i)^(ein|eine|einer|einem|eines|einen|der|die|das|den|dem|des|sie|er|es|wir|ihr|ihm|ihn|mein|meine|meiner|meines|meinem|meinen|sein|seine|seines|seinem|seinen|ihres|ihrer|ihren|ihrem|dieser|dieses|diesem|diese|diesen|jener|jene|jenes|ist|sind|war|wird|hat|hatte|haben|kann|kannst|konnte|möchte|möchten|werden|wäre|als|oder|vor|nach|unter|über|zu|zum|zur|aus|auf|aber|ach|alle|alles|alleine|am|an|denn|dort|du|für|hier|in|ja|jetzt|kein|keine|mit|mal|nicht|noch|nur|so|um|und|von|wie|wenn|wo|wer|was|warum|deine|deines|deinem|deiner|dein|jeder|jede|jedes|jeden|mehr|mehrere|machen|machst|braucht|brauchst|sehen|siehst|nennt|nennen|tippt|tippe|geht|läuft|spielen|spielt|drücke|drückt|klick|passt|packe|legt|liegt|sehen|gibt|gehst|gehe|sieh|setz|setze|schau|schaue|möchte|kommt|kommen|kommst|nennt|hau|hört|hören|sagt|sagen|läuft|laufen)$",
+  "(?i)^(ein|eine|einer|einem|eines|einen|der|die|das|den|dem|des|sie|er|es|wir|ihr|ihm|ihn|mein|meine|meiner|meines|meinem|meinen|sein|seine|seines|seinem|seinen|ihres|ihrer|ihren|ihrem|dieser|dieses|diesem|diese|diesen|jener|jene|jenes|ist|sind|war|wird|hat|hatte|haben|kann|kannst|konnte|möchte|möchten|werden|wäre|als|oder|vor|nach|unter|über|zu|zum|zur|aus|auf|aber|ach|alle|alles|alleine|am|an|denn|dort|du|für|hier|in|ja|jetzt|kein|keine|mit|mal|nicht|noch|nur|so|um|und|von|wie|wenn|wo|wer|was|warum|deine|deines|deinem|deiner|dein|jeder|jede|jedes|jeden|mehr|mehrere|machen|machst|braucht|brauchst|sehen|siehst|nennt|nennen|tippt|tippe|geht|läuft|spielen|spielt|drücke|drückt|klick|passt|packe|legt|liegt|gibt|gehst|gehe|sieh|setz|setze|schau|schaue|kommt|kommen|kommst|hau|hört|hören|sagt|sagen|laufen)$",
   # German nouns / adjectives the docs use
   "(?i)^(modul|module|lokal|lokale|variante|adresse|explizit|wahl|datei|gerät|gerate|aktion|checke|suche|sucht|vertikal|foto|fotos|manuell|offen|triggern|positiv|negativ|aktiv|passiv|standard|spielzeit|tageszeit|wetter|wolken|stunde|sekunde|sekunden|minuten|tippen|festhalten|feinschliff|langsam|schnell|leise|laut)$",
 ]
+
+# Word-level dictionary overrides — for tokens that typos' built-in
+# dictionary actively rewrites. The regex blocks above don't help
+# because typos consults the dictionary BEFORE the ignore lists.
+# Mapping a word to itself marks it as known-correct.
+[default.extend-words]
+PN = "PN"     # part of "PNGs" / "PNG" tokenisation
+bck = "bck"   # I2S bit-clock pin name (pin_bck in webradio.cpp)
 
 [files]
 extend-exclude = [
