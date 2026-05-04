@@ -1,0 +1,97 @@
+name: Release
+
+# Triggers when a `v*` tag is pushed (e.g. `v1.1.0`). Builds firmware for
+# every target, merges each env's bootloader + partitions + OTA selector +
+# app into a single offset-0x0 image, and attaches the resulting
+# `pixel-pets-vX.Y.Z-<pet>.bin` files to the GitHub release for that tag.
+#
+# Workflow:
+#   1. Hand-create the release with `gh release create vX.Y.Z --notes "..."`
+#      (or via the GitHub UI). Tag does not need to exist yet — gh creates it.
+#   2. The tag push triggers this workflow.
+#   3. Five binaries land on the release as downloadable assets.
+#
+# If the release doesn't exist when the tag is pushed, softprops/action-gh-
+# release@v2 creates one with auto-generated notes — fine for unplanned
+# tag pushes, but hand-curated notes are the better experience.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-attach:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache PlatformIO + pip
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+          key: pio-release-${{ hashFiles('platformio.ini') }}
+
+      - name: Install PlatformIO + esptool
+        run: pip install platformio esptool
+
+      - name: Build firmware for every target
+        run: pio run -e cores3 -e visu -e core2 -e pip -e pip-s3
+
+      - name: Merge per-env outputs into single offset-0x0 images
+        run: |
+          set -euo pipefail
+          mkdir -p release-bins
+
+          # boot_app0.bin (the OTA selector pointing at slot 0) ships with
+          # the Arduino-ESP32 framework — find it once and reuse.
+          BOOT_APP0=$(ls ~/.platformio/packages/framework-arduinoespressif32*/tools/partitions/boot_app0.bin 2>/dev/null | head -1)
+          if [ -z "$BOOT_APP0" ]; then
+            echo "::error::boot_app0.bin not found under framework-arduinoespressif32*"
+            exit 1
+          fi
+          echo "Using boot_app0: $BOOT_APP0"
+
+          # Per-env metadata. Bootloader on ESP32 sits at 0x1000; on
+          # ESP32-S2 / S3 at 0x0. Friendly names are the user-facing pet
+          # branding the README uses.
+          declare -A CHIP=( [cores3]=esp32s3 [visu]=esp32s3 [core2]=esp32 [pip]=esp32 [pip-s3]=esp32s3 )
+          declare -A NAME=( [cores3]=muffin   [visu]=visu    [core2]=goo-goo [pip]=pip   [pip-s3]=pip-s3 )
+
+          for env in cores3 visu core2 pip pip-s3; do
+            chip=${CHIP[$env]}
+            friendly=${NAME[$env]}
+            offset=$([ "$chip" = esp32 ] && echo 0x1000 || echo 0x0)
+            out="release-bins/pixel-pets-${GITHUB_REF_NAME}-${friendly}.bin"
+            echo "::group::Merge $env ($chip) -> $out"
+            python3 -m esptool --chip "$chip" merge_bin \
+              -o "$out" \
+              --flash_mode dio --flash_freq 80m --flash_size keep \
+              "$offset" ".pio/build/$env/bootloader.bin" \
+              0x8000  ".pio/build/$env/partitions.bin" \
+              0xe000  "$BOOT_APP0" \
+              0x10000 ".pio/build/$env/firmware.bin"
+            echo "::endgroup::"
+          done
+
+          echo
+          echo "Final assets:"
+          ls -lh release-bins/
+
+      - name: Attach binaries to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          # Keep any existing hand-crafted release notes — only add files.
+          files: release-bins/*.bin
+          fail_on_unmatched_files: true

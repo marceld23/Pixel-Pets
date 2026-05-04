@@ -34,6 +34,11 @@ src/*.bak
 # The decoded PNGs in screenshots/ stay tracked.
 capture.log
 
+# Local merged release binaries — produced ad-hoc when testing the
+# release pipeline outside CI. CI rebuilds these in-place; the actual
+# released artefacts live as GitHub release assets.
+release-bins/
+
 # uv virtualenv inside tools/. uv.lock IS tracked for reproducibility,
 # the .venv directory is per-machine and must not be committed.
 tools/.venv/

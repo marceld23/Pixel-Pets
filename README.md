@@ -159,7 +159,9 @@ Good places to start hacking are new scenes, mini-games, face animations, sounds
 
 ## Fastest start
 
-Sorted from easiest to hardest setup. Each row links to a self-contained per-pet guide that covers everything (USB driver, env, flashing quirks, gotchas):
+Sorted from easiest to hardest setup. Each row links to a self-contained per-pet guide that covers everything (USB driver, env, flashing quirks, gotchas).
+
+💾 **Don't want to install PlatformIO?** Every [GitHub release](https://github.com/marceld23/Pixel-Pets/releases/latest) ships pre-built `pixel-pets-vX.Y.Z-<pet>.bin` files — single-file flash images at offset `0x0`. Use [M5Burner](https://docs.m5stack.com/en/uiflow/m5burner/intro) ("Custom Firmware" → upload .bin) or `esptool.py --chip <esp32|esp32s3> write_flash 0x0 pixel-pets-…bin`. Muffin's voice features still need the Module-LLM Linux setup from [`docs/setup-muffin.md`](docs/setup-muffin.md) on top of the binary.
 
 | Pet | Hardware | Difficulty | Setup guide |
 |---|---|---|---|
