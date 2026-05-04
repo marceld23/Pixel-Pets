@@ -63,3 +63,45 @@ jobs:
 
       - name: Run native unit tests
         run: pio test -e native --verbose
+
+  check:
+    name: pio check (cppcheck on src/)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Cover both ESP32 (core2) and ESP32-S3 (cores3) header sets;
+        # visu / pip / pip-s3 share src files with these two so a clean
+        # check on cores3 + core2 effectively covers all five envs.
+        env: [cores3, core2]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache PlatformIO core + libraries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio/.cache
+            ~/.platformio/packages
+            ~/.platformio/platforms
+          key: pio-check-${{ runner.os }}-${{ matrix.env }}-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            pio-check-${{ runner.os }}-${{ matrix.env }}-
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          pip install platformio
+
+      - name: Static analysis (cppcheck via PlatformIO)
+        # `--skip-packages` ignores third-party libraries under .pio/libdeps
+        # (M5Module-LLM, ESP32-audioI2S, …) which we don't own and would
+        # drown the report. `--severity high --severity medium` filters
+        # the noisier low-severity warnings; `--fail-on-defect high`
+        # turns High-severity findings into red CI.
+        run: pio check -e ${{ matrix.env }} --skip-packages --severity high --severity medium --fail-on-defect high

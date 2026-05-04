@@ -1,0 +1,73 @@
+name: Link check
+
+# Monthly link health check via lychee. Scans every .md and the Pages
+# site HTML for broken external links (404, DNS failures, cert errors).
+# Catches the silent rot in third-party URLs — M5Stack store pages,
+# Hackster.io, image badges, doc references — that nobody notices
+# manually.
+#
+# Runs the 1st of each month, plus on-demand via workflow_dispatch.
+# Doesn't run on every push: link rot is slow, and external services
+# occasionally 503 transiently — running monthly avoids false alarms.
+
+on:
+  schedule:
+    - cron: '17 6 1 * *'       # 1st of each month, 06:17 UTC
+  workflow_dispatch:
+  # Also run when the link-check setup itself changes, so we notice
+  # right away if a config tweak breaks scanning.
+  push:
+    paths:
+      - '.github/workflows/lychee.yml'
+      - 'lychee.toml'
+
+permissions:
+  contents: read
+  issues: write    # so the action can open an issue when links break
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore lychee cache (avoids re-checking unchanged URLs)
+        uses: actions/cache@v4
+        with:
+          path: .lycheecache
+          key: lychee-${{ github.run_id }}
+          restore-keys: lychee-
+
+      - name: Run lychee
+        id: lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # `--no-progress` keeps the log readable; `--cache` reuses the
+          # restored .lycheecache to skip unchanged URLs across runs.
+          # Excluded patterns: mailto, mDNS-local hostnames the pet
+          # exposes (won't resolve from the runner), and the YouTube
+          # thumbnail URLs which sometimes return transient 5xx.
+          args: |
+            --verbose
+            --no-progress
+            --cache
+            --max-cache-age 7d
+            --exclude-mail
+            --exclude '^https://[^/]*-setup\.local'
+            --exclude '^https://img\.youtube\.com'
+            './**/*.md'
+            './site/**/*.html'
+          fail: false
+          format: markdown
+          output: lychee-report.md
+
+      - name: Open / update issue when links are broken
+        if: steps.lychee.outputs.exit_code != 0
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "Link check found broken URLs"
+          content-filepath: lychee-report.md
+          labels: |
+            bug
+            link-rot

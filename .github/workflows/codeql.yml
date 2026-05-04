@@ -1,0 +1,81 @@
+name: CodeQL
+
+# GitHub-native static-analysis for the firmware. CodeQL traces compiler
+# invocations during a real PlatformIO build, then runs its security +
+# bug-pattern queries against the resulting database. Catches things like
+# buffer overflows, use-after-free, format-string mismatches.
+#
+# Heavy job (full PlatformIO build + analysis ≈ 6–10 min), so we don't
+# run it on every push. Triggers:
+#   - push to main, but only when src/ or this workflow change
+#   - PR targeting main, same paths filter
+#   - weekly schedule, so security advisories that emerge after merge
+#     are still caught against the latest main
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'platformio.ini'
+      - '.github/workflows/codeql.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'platformio.ini'
+  schedule:
+    - cron: '23 4 * * 1'      # Monday 04:23 UTC
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # cores3 covers ESP32-S3 + voice pipeline + camera; core2 covers
+        # ESP32 + the WAV audio path. Together they exercise nearly all
+        # of src/ — pip / visu add little extra C/C++ that wasn't already
+        # compiled by these two. (visu shares CoreS3 source minus the
+        # voice pipeline; pip uses main_pip.cpp + src/pip/.)
+        env: [cores3, core2]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio/.cache
+            ~/.platformio/packages
+            ~/.platformio/platforms
+          key: pio-codeql-${{ matrix.env }}-${{ hashFiles('platformio.ini') }}
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: c-cpp
+          queries: security-and-quality
+
+      - name: Build firmware (CodeQL traces compiles)
+        run: pio run -e ${{ matrix.env }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:c-cpp/env:${{ matrix.env }}"

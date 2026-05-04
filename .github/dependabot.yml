@@ -1,0 +1,39 @@
+version: 2
+
+# Two ecosystems are version-managed in this repo:
+#
+#   - GitHub Actions (uses: actions/checkout@v4 etc.) under .github/workflows/
+#   - Python tooling (Pillow, pyserial, esptool) under tools/pyproject.toml
+#
+# Dependabot opens auto-PRs when newer versions are available; we just
+# review and merge.  PlatformIO `lib_deps` in platformio.ini aren't a
+# Dependabot-supported ecosystem, so library updates there stay manual.
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "ci"
+
+  - package-ecosystem: "pip"
+    directory: "/tools"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "tools"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "tools"

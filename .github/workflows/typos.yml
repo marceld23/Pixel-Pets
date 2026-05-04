@@ -1,0 +1,23 @@
+name: Typos
+
+# Spell-checks the repo using crate-ci/typos. Fast (sub-second), low
+# false-positive rate. Skips binary files automatically and respects
+# .gitignore. If something legitimate trips the checker (M5Stack-specific
+# terms, identifier names, etc.) add it to .typos.toml.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  spell-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run typos
+        uses: crate-ci/typos@master

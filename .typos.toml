@@ -1,0 +1,33 @@
+# typos config — false-positive suppressions live here.
+#
+# typos already skips binary files and respects .gitignore by default;
+# the entries below are for legitimate strings the checker would
+# otherwise flag (M5Stack-specific terms, German identifiers in
+# i18n.cpp, intentional German words in docs).
+
+[default]
+# Ignore identifiers that match these patterns (e.g. M5Stack product
+# names, our own constants). `extend-identifiers` is for whole tokens
+# rather than substrings.
+extend-ignore-identifiers-re = [
+  "Goo[-_]?Goo",
+  "M5GO",
+  "M5Burner",
+  "M5StickC",
+  "ax630c",
+  "AX620E",
+]
+
+# Project-specific words/phrases that should never be considered typos.
+[default.extend-words]
+# DE words used in code comments / docs / strings — typos sometimes
+# mistakes them for nearby English misspellings.
+"hau" = "hau"      # German "hau" (smack) — mini-game wording
+
+[files]
+# Files that shouldn't be scanned even though they aren't gitignored.
+extend-exclude = [
+  "tools/uv.lock",
+  "*.bin",
+  "*.deb",
+]
