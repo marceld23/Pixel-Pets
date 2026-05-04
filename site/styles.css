@@ -641,6 +641,42 @@ pre code { background: none; padding: 0; color: inherit; }
   margin-top: auto;
 }
 
+/* ── Pre-built firmware callout (between difficulty cards + steps) ─────── */
+
+.prebuilt-callout {
+  background: var(--surface);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  /* Match the .steps column width so the two visually pair as a single
+     "tutorial column" beneath the difficulty cards above. */
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow-sm);
+}
+.prebuilt-callout h3 {
+  margin: 0 0 8px;
+  color: var(--accent-deep);
+}
+.prebuilt-callout p {
+  margin: 0 0 10px;
+  font-size: 14.5px;
+}
+.prebuilt-callout p:last-child {
+  margin-bottom: 0;
+}
+.prebuilt-callout .prebuilt-link {
+  font-weight: 600;
+  color: var(--accent-deep);
+}
+.prebuilt-callout .prebuilt-caveat {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
 /* ── Steps (get started) ────────────────────────────────────────────────── */
 
 .steps {
