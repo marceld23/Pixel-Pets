@@ -1,24 +1,28 @@
 name: Release
 
-# Triggers when a `v*` tag is pushed (e.g. `v1.1.0`). Builds firmware for
-# every target, merges each env's bootloader + partitions + OTA selector +
-# app into a single offset-0x0 image, and attaches the resulting
-# `pixel-pets-vX.Y.Z-<pet>.bin` files to the GitHub release for that tag.
+# Two trigger paths:
 #
-# Workflow:
-#   1. Hand-create the release with `gh release create vX.Y.Z --notes "..."`
-#      (or via the GitHub UI). Tag does not need to exist yet — gh creates it.
-#   2. The tag push triggers this workflow.
-#   3. Five binaries land on the release as downloadable assets.
+#   1. `push: tags: v*` — real release. Builds firmware for every target,
+#      merges each env's bootloader + partitions + OTA selector + app into
+#      a single offset-0x0 image, and attaches the resulting
+#      `pixel-pets-vX.Y.Z-<pet>.bin` files to the GitHub release for that
+#      tag. Recommended workflow:
 #
-# If the release doesn't exist when the tag is pushed, softprops/action-gh-
-# release@v2 creates one with auto-generated notes — fine for unplanned
-# tag pushes, but hand-curated notes are the better experience.
+#          gh release create vX.Y.Z --notes "..."   # human-curates notes
+#          git push origin vX.Y.Z                   # this CI runs + uploads bins
+#
+#   2. `workflow_dispatch` — dry run for testing the pipeline without
+#      tagging. Builds + merges as normal, but instead of attaching to a
+#      release, the binaries are uploaded as a workflow artifact (visible
+#      to repo maintainers in the run summary, 7-day retention). Filename
+#      uses `test-<short-sha>` instead of a version tag so the artifacts
+#      are unmistakably non-release builds.
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -46,10 +50,26 @@ jobs:
       - name: Install PlatformIO + esptool
         run: pip install platformio esptool
 
+      - name: Resolve VERSION + MODE from trigger
+        id: meta
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "version=$GITHUB_REF_NAME"        >> "$GITHUB_OUTPUT"
+            echo "mode=release"                    >> "$GITHUB_OUTPUT"
+            echo "Triggered by tag push: $GITHUB_REF_NAME → real release upload"
+          else
+            echo "version=test-${GITHUB_SHA:0:7}"  >> "$GITHUB_OUTPUT"
+            echo "mode=test"                       >> "$GITHUB_OUTPUT"
+            echo "Triggered manually on $GITHUB_REF_NAME → artifact-only dry run"
+          fi
+
       - name: Build firmware for every target
         run: pio run -e cores3 -e visu -e core2 -e pip -e pip-s3
 
       - name: Merge per-env outputs into single offset-0x0 images
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+          MODE: ${{ steps.meta.outputs.mode }}
         run: |
           set -euo pipefail
           mkdir -p release-bins
@@ -73,7 +93,7 @@ jobs:
             chip=${CHIP[$env]}
             friendly=${NAME[$env]}
             offset=$([ "$chip" = esp32 ] && echo 0x1000 || echo 0x0)
-            out="release-bins/pixel-pets-${GITHUB_REF_NAME}-${friendly}.bin"
+            out="release-bins/pixel-pets-${VERSION}-${friendly}.bin"
             echo "::group::Merge $env ($chip) -> $out"
             python3 -m esptool --chip "$chip" merge_bin \
               -o "$out" \
@@ -86,12 +106,21 @@ jobs:
           done
 
           echo
-          echo "Final assets:"
+          echo "Final assets ($MODE mode, version=$VERSION):"
           ls -lh release-bins/
 
-      - name: Attach binaries to the release
+      - name: Attach binaries to the release  (tag push only)
+        if: steps.meta.outputs.mode == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          # Keep any existing hand-crafted release notes — only add files.
           files: release-bins/*.bin
           fail_on_unmatched_files: true
+
+      - name: Upload binaries as workflow artifact  (manual dry run only)
+        if: steps.meta.outputs.mode == 'test'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pixel-pets-firmware-${{ steps.meta.outputs.version }}
+          path: release-bins/*.bin
+          retention-days: 7
+          if-no-files-found: error
