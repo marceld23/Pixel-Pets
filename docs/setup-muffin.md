@@ -6,7 +6,7 @@ If this feels like too much, **start with [Visu](setup-visu.md) instead** — sa
 
 ## What you need
 
-- **M5Stack CoreS3** ([store link](https://shop.m5stack.com/products/m5stack-cores3-esp32s3-iot-development-kit))
+- **M5Stack CoreS3** ([store link](https://shop.m5stack.com/products/m5stack-cores3-esp32s3-iotdevelopment-kit))
 - **M5Stack Module LLM (M140 / AX630C)** ([store link](https://shop.m5stack.com/products/m5stack-llm-large-language-model-module-kit-ax630c)) — 4 GB RAM, 32 GB eMMC, runs Ubuntu 22.04 aarch64
 - **Battery Module 13.2** ([store link](https://shop.m5stack.com/products/battery-module-13-2-1500mah)) — 1500 mAh, separate purchase from the LLM module bundle
 - A **USB-C cable** (you'll need to swap it between the CoreS3 and the LLM module)
@@ -358,12 +358,15 @@ What was done to this module beyond the factory image — kept here so a later w
 | 10 | Installed the Qwen3-0.6B model | `dpkg -i --force-depends llm-model-qwen3-0.6B-ax630c_0.4.deb` |
 | 11 | Re-disabled TTS services after the lib-llm post-install (postinst had re-enabled them) | `systemctl stop llm-tts llm-melotts && systemctl disable llm-tts llm-melotts` |
 
-The .deb files live under [`../pkgs/`](../pkgs/), sorted by function:
+The .deb files live under [`../pkgs/`](../pkgs/), sorted by function (the
+.debs themselves are gitignored — only `MANIFEST.txt` and the wake-WAV
+are tracked, so the subdirectories below show up locally once you've
+fetched the binaries, not in the bare repo):
 
-- [`../pkgs/framework/`](../pkgs/framework/) — `lib-llm`, `llm-sys`, `llm-llm` (core stack)
-- [`../pkgs/services/`](../pkgs/services/) — `llm-vad`, `llm-whisper` (service binaries)
-- [`../pkgs/models/`](../pkgs/models/) — all `llm-model-*` (model data)
-- [`../pkgs/audio/`](../pkgs/audio/) — `silent_wakeup.wav` (the only tracked file; .debs gitignored)
+- `../pkgs/framework/` — `lib-llm`, `llm-sys`, `llm-llm` (core stack)
+- `../pkgs/services/` — `llm-vad`, `llm-whisper` (service binaries)
+- `../pkgs/models/` — all `llm-model-*` (model data)
+- [`../pkgs/audio/`](../pkgs/audio/) — `silent_wakeup.wav` (the only tracked file)
 
 ---
 

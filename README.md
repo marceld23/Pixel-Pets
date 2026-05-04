@@ -110,8 +110,8 @@ Pick **one pet** plus optionally **a Pip** as a pocket-sized accessory. Direct l
 
 | Pet | Required parts | M5Stack store links |
 |---|---|---|
-| **Muffin** | M5Stack CoreS3 + **M5Stack Module LLM (AX630C)** + **Battery Module 13.2** (1500 mAh — separate purchase, not bundled with the LLM module). | [CoreS3](https://shop.m5stack.com/products/m5stack-cores3-esp32s3-iot-development-kit) · [Module LLM (AX630C)](https://shop.m5stack.com/products/m5stack-llm-large-language-model-module-kit-ax630c) · [Battery Module 13.2](https://shop.m5stack.com/products/battery-module-13-2-1500mah) |
-| **Visu** | M5Stack CoreS3 + **M5GO Battery Bottom3** (500 mAh, official CoreS3 accessory). | [CoreS3](https://shop.m5stack.com/products/m5stack-cores3-esp32s3-iot-development-kit) · [Battery Bottom3](https://shop.m5stack.com/products/m5go-battery-bottom3-for-cores3-only) |
+| **Muffin** | M5Stack CoreS3 + **M5Stack Module LLM (AX630C)** + **Battery Module 13.2** (1500 mAh — separate purchase, not bundled with the LLM module). | [CoreS3](https://shop.m5stack.com/products/m5stack-cores3-esp32s3-iotdevelopment-kit) · [Module LLM (AX630C)](https://shop.m5stack.com/products/m5stack-llm-large-language-model-module-kit-ax630c) · [Battery Module 13.2](https://shop.m5stack.com/products/battery-module-13-2-1500mah) |
+| **Visu** | M5Stack CoreS3 + **M5GO Battery Bottom3** (500 mAh, official CoreS3 accessory). | [CoreS3](https://shop.m5stack.com/products/m5stack-cores3-esp32s3-iotdevelopment-kit) · [Battery Bottom3](https://shop.m5stack.com/products/m5go-battery-bottom3-for-cores3-only) |
 | **Goo-Goo** | M5Stack Core2 (built-in 500 mAh battery, no extra parts). | [Core2](https://shop.m5stack.com/products/m5stack-core2-esp32-iot-development-kit-v1-1) |
 
 ### Pip — optional pocket accessory

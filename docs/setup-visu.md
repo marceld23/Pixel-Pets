@@ -4,7 +4,7 @@
 
 ## What you need
 
-- **M5Stack CoreS3** ([store link](https://shop.m5stack.com/products/m5stack-cores3-esp32s3-iot-development-kit))
+- **M5Stack CoreS3** ([store link](https://shop.m5stack.com/products/m5stack-cores3-esp32s3-iotdevelopment-kit))
 - **M5GO Battery Bottom3** ([store link](https://shop.m5stack.com/products/m5go-battery-bottom3-for-cores3-only)) — 500 mAh, the official CoreS3 accessory.
 - A **USB-C cable**.
 - A computer with [PlatformIO](https://platformio.org/) (`pip install platformio` if missing).
