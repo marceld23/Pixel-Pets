@@ -99,13 +99,15 @@ jobs:
           pip install platformio
 
       - name: Static analysis (cppcheck via PlatformIO)
-        # `--pattern "+<src/>"` narrows the scan to OUR source tree;
-        # otherwise cppcheck preprocesses M5GFX / ArduinoJson / etc.
-        # headers as it follows includes from src/ and reports their
-        # internal preprocessor errors (`--skip-packages` alone doesn't
-        # prevent that — it only skips listing libdeps as analysis
-        # targets, not their inclusion as headers).
+        # `--pattern "+<src/>"` narrows the scan to OUR source tree.
+        # Even with that, cppcheck still preprocesses any headers that
+        # src/ files #include — and M5GFX / ArduinoJson use macros
+        # (e.g. SOC_GPIO_*, ARDUINOJSON_CONCAT_) that aren't defined
+        # under cppcheck's own preprocessor, producing high-severity
+        # `preprocessorErrorDirective` noise. The cppcheck-level
+        # `--suppress=*:.pio/libdeps/*` (passed via `--flags`) drops
+        # those findings without hiding real issues in our code.
         # `--severity high --severity medium` filters the noisier
         # low-severity warnings; `--fail-on-defect high` turns
         # High-severity findings in our code into red CI.
-        run: pio check -e ${{ matrix.env }} --pattern "+<src/>" --skip-packages --severity high --severity medium --fail-on-defect high
+        run: pio check -e ${{ matrix.env }} --pattern "+<src/>" --skip-packages --severity high --severity medium --fail-on-defect high --flags "--suppress=*:.pio/libdeps/*"
