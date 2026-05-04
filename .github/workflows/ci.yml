@@ -15,7 +15,7 @@ jobs:
       matrix:
         env: [cores3, core2, visu, pip]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -49,7 +49,7 @@ jobs:
     name: pio test -e native (pure-logic units)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -75,7 +75,7 @@ jobs:
         # check on cores3 + core2 effectively covers all five envs.
         env: [cores3, core2]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
