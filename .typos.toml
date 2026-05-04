@@ -1,14 +1,13 @@
 # typos config — false-positive suppressions live here.
 #
-# typos already skips binary files and respects .gitignore by default;
-# the entries below are for legitimate strings the checker would
-# otherwise flag (M5Stack-specific terms, German identifiers in
-# i18n.cpp, intentional German words in docs).
+# typos has no language detection, so on a bilingual repo it flags
+# common German function words ("ein", "ist", "als", "oder", …) as
+# English typos. We tell it which whole words to leave alone via the
+# regex below, and exclude the heaviest bilingual files entirely.
 
 [default]
-# Ignore identifiers that match these patterns (e.g. M5Stack product
-# names, our own constants). `extend-identifiers` is for whole tokens
-# rather than substrings.
+# Identifiers that should never be flagged regardless of context —
+# product names, API constants, model identifiers.
 extend-ignore-identifiers-re = [
   "Goo[-_]?Goo",
   "M5GO",
@@ -18,16 +17,24 @@ extend-ignore-identifiers-re = [
   "AX620E",
 ]
 
-# Project-specific words/phrases that should never be considered typos.
-[default.extend-words]
-# DE words used in code comments / docs / strings — typos sometimes
-# mistakes them for nearby English misspellings.
-"hau" = "hau"      # German "hau" (smack) — mini-game wording
+# German function/content words that surface in mixed-language docs
+# and commit messages. Single regex with `(?i)` for case-insensitive
+# matching so "Ein", "EIN", "ein" all match the same alternation.
+# Anchored with ^...$ so we don't accidentally match "fein" or "deinem".
+extend-ignore-words-re = [
+  "(?i)^(ein|eine|einer|einem|eines|einen|der|die|das|den|dem|des|sie|er|es|ist|sind|war|wird|hat|haben|als|oder|vor|nach|unter|über|zu|zum|zur|aus|auf|aber|ach|alle|alles|am|an|denn|dort|du|für|hier|in|ja|jetzt|kein|keine|mit|mal|nicht|noch|nur|so|um|und|von|wie|wir|werden|wenn|deine|deines|deinem|deiner|dein|klick|passt|packe|modul|module|lokal|lokale|variante|adresse|explizit|hau|wahl|datei|gerät|gerate|jeder|jede|jedes|machen|machst|braucht|brauchst|sehen|siehst|nennt|nennen|tippt|tippe|geht|läuft|hat|hatte|sehen|spielen|spielt|drücke|drückt)$",
+]
 
 [files]
-# Files that shouldn't be scanned even though they aren't gitignored.
 extend-exclude = [
   "tools/uv.lock",
   "*.bin",
   "*.deb",
+  # Bilingual i18n string table — every German entry would flag.
+  # Real typos in here surface as garbage on-screen, more visible
+  # there than in CI.
+  "src/i18n.cpp",
+  # Pages site uses data-de attributes throughout — same story.
+  "site/index.html",
+  "site/privacy.html",
 ]
