@@ -1,0 +1,39 @@
+name: Feature suggestion
+description: Suggest a new mini-game, sound, scene, animation, mood or Pip interaction.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Pitch us your idea. Justus has Strong Opinions™ on what feels right for the pet, but he reads everything that lands here. Concrete is better than abstract.
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: What should the pet do?
+      description: Describe the feature as clearly as you can. A 10-year-old should be able to read this.
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why?
+      description: What does this add to the kid experience?
+    validations:
+      required: false
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Which target(s) would this affect?
+      multiple: true
+      options:
+        - All pets
+        - Muffin (CoreS3 + LLM)
+        - Visu (CoreS3)
+        - Goo-Goo (Core2)
+        - Pip (StickC PLUS2)
+        - Web landing page
+    validations:
+      required: false

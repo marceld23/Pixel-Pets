@@ -1,0 +1,57 @@
+name: Bug report
+description: Something doesn't work on real hardware or in the browser landing page.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Pixel Pets is maintained by two people part-time, so a clear, focused report helps a lot. The bits below are most of what we'd ask anyway.
+
+  - type: dropdown
+    id: target
+    attributes:
+      label: Which target / build env?
+      options:
+        - cores3 (Muffin — CoreS3 + Module-LLM)
+        - visu (CoreS3 alone)
+        - core2 (Goo-Goo)
+        - pip (StickC PLUS2)
+        - pip-s3 (StickC PLUS2, S3 revision)
+        - browser landing page (site/)
+        - other / not applicable
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: As much detail as you can. Steps to reproduce help a lot.
+      placeholder: I tapped X, expected Y, got Z.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      placeholder: The pet should have …
+    validations:
+      required: false
+
+  - type: textarea
+    id: serial-log
+    attributes:
+      label: Serial log (if relevant)
+      description: Output from `pio device monitor` while the bug happened. Trim to the interesting bit.
+      render: shell
+    validations:
+      required: false
+
+  - type: input
+    id: firmware-version
+    attributes:
+      label: Firmware version / commit
+      placeholder: 1.0.0 — or a git commit short hash
+    validations:
+      required: false
