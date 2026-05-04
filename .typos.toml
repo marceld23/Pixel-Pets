@@ -1,28 +1,38 @@
 # typos config — false-positive suppressions live here.
 #
 # typos has no language detection, so on a bilingual repo it flags
-# common German function words ("ein", "ist", "als", "oder", …) as
-# English typos. We tell it which whole words to leave alone via the
-# regex below, and exclude the heaviest bilingual files entirely.
+# every common German word ("ein", "ist", "checke", "Foto", …) as a
+# typo. We tell it which whole tokens to leave alone, and exclude
+# the heaviest bilingual files entirely.
 
 [default]
-# Identifiers that should never be flagged regardless of context —
-# product names, API constants, model identifiers.
+# Identifiers (variable names, product names, model strings) — these
+# are matched against tokens INCLUDING surrounding non-letters, so
+# `ser.read` correctly matches `^ser$`.
 extend-ignore-identifiers-re = [
+  # M5Stack product / API surface
   "Goo[-_]?Goo",
   "M5GO",
   "M5Burner",
   "M5StickC",
   "ax630c",
   "AX620E",
+  # Project-specific code identifiers that look like typos out of context
+  "^ser$",     # tools/listen.py: ser = serial.Serial()
+  "^iy$",     # face.cpp: int ix, iy = …
+  "^ful$",    # 3-char NVS keys (hap / eng / ful for happiness / energy / fullness)
+  "^lck$",    # lockout NVS key
 ]
 
-# German function/content words that surface in mixed-language docs
-# and commit messages. Single regex with `(?i)` for case-insensitive
-# matching so "Ein", "EIN", "ein" all match the same alternation.
-# Anchored with ^...$ so we don't accidentally match "fein" or "deinem".
+# Whole words. Single regex with (?i) for case-insensitive so "Ein",
+# "EIN", "ein" all match. Anchored ^...$ so we don't accidentally match
+# "fein" or "deinem" against "ein".
 extend-ignore-words-re = [
-  "(?i)^(ein|eine|einer|einem|eines|einen|der|die|das|den|dem|des|sie|er|es|ist|sind|war|wird|hat|haben|als|oder|vor|nach|unter|über|zu|zum|zur|aus|auf|aber|ach|alle|alles|am|an|denn|dort|du|für|hier|in|ja|jetzt|kein|keine|mit|mal|nicht|noch|nur|so|um|und|von|wie|wir|werden|wenn|deine|deines|deinem|deiner|dein|klick|passt|packe|modul|module|lokal|lokale|variante|adresse|explizit|hau|wahl|datei|gerät|gerate|jeder|jede|jedes|machen|machst|braucht|brauchst|sehen|siehst|nennt|nennen|tippt|tippe|geht|läuft|hat|hatte|sehen|spielen|spielt|drücke|drückt)$",
+  # German function words + common verbs/adjectives that appear in
+  # bilingual docs and commit messages
+  "(?i)^(ein|eine|einer|einem|eines|einen|der|die|das|den|dem|des|sie|er|es|wir|ihr|ihm|ihn|mein|meine|meiner|meines|meinem|meinen|sein|seine|seines|seinem|seinen|ihres|ihrer|ihren|ihrem|dieser|dieses|diesem|diese|diesen|jener|jene|jenes|ist|sind|war|wird|hat|hatte|haben|kann|kannst|konnte|möchte|möchten|werden|wäre|als|oder|vor|nach|unter|über|zu|zum|zur|aus|auf|aber|ach|alle|alles|alleine|am|an|denn|dort|du|für|hier|in|ja|jetzt|kein|keine|mit|mal|nicht|noch|nur|so|um|und|von|wie|wenn|wo|wer|was|warum|deine|deines|deinem|deiner|dein|jeder|jede|jedes|jeden|mehr|mehrere|machen|machst|braucht|brauchst|sehen|siehst|nennt|nennen|tippt|tippe|geht|läuft|spielen|spielt|drücke|drückt|klick|passt|packe|legt|liegt|sehen|gibt|gehst|gehe|sieh|setz|setze|schau|schaue|möchte|kommt|kommen|kommst|nennt|hau|hört|hören|sagt|sagen|läuft|laufen)$",
+  # German nouns / adjectives the docs use
+  "(?i)^(modul|module|lokal|lokale|variante|adresse|explizit|wahl|datei|gerät|gerate|aktion|checke|suche|sucht|vertikal|foto|fotos|manuell|offen|triggern|positiv|negativ|aktiv|passiv|standard|spielzeit|tageszeit|wetter|wolken|stunde|sekunde|sekunden|minuten|tippen|festhalten|feinschliff|langsam|schnell|leise|laut)$",
 ]
 
 [files]
