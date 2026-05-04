@@ -22,6 +22,8 @@ extend-ignore-identifiers-re = [
   "^iy$",     # face.cpp: int ix, iy = …
   "^ful$",    # 3-char NVS keys (hap / eng / ful for happiness / energy / fullness)
   "^lck$",    # lockout NVS key
+  "^bck$",    # I2S bit-clock pin name (pin_bck in webradio.cpp)
+  "^PN$",     # typos splits "PNG"/"PNGs" tokens and flags the "PN" half
 ]
 
 # Whole words. Single regex with (?i) for case-insensitive so "Ein",
