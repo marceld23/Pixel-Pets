@@ -2,7 +2,13 @@
   <img src="assets/logo.jpg" alt="Pixel Pets logo" width="220">
 </p>
 
-# Pixel Pets
+# 🐾 Pixel Pets
+
+<p align="center">
+  <a href="https://github.com/marceld23/Pixel-Pets/stargazers">
+    <img src="https://img.shields.io/github/stars/marceld23/Pixel-Pets?style=social" alt="GitHub stars">
+  </a>
+</p>
 
 <p align="center">
   <a href="#highlights">Highlights</a> ·
@@ -10,13 +16,19 @@
   <a href="#for-parents">For parents</a> ·
   <a href="#for-makers">For makers</a> ·
   <a href="#documentation">Documentation</a> ·
-  <a href="#help-it-grow">Help it grow</a> ·
+  <a href="#support-the-project">Support the project</a> ·
   <a href="#version-history">Version history</a>
 </p>
 
 A family of virtual pets on M5Stack hardware. **Three pet variants** — **Muffin** (CoreS3 + LLM), **Visu** (CoreS3 alone), **Goo-Goo** (Core2) — plus one optional **accessory**, **Pip** (M5StickC PLUS2), which acts as a pocket-sized companion device for any of the bigger pets. One source tree, five build envs (`cores3` / `visu` / `core2` / `pip` / `pip-s3`). Pet logic, animations, mini-games, ESP-NOW friends and weather/location are target-agnostic; voice and the front camera are CoreS3-only.
 
 **Version 1.0.0** — first stable release. See [Version history](#version-history) at the bottom for the rough scope.
+
+> **👨‍👦 A note from the makers**
+>
+> Pixel Pets started as a Sunday afternoon between a dad and his 10-year-old son, Justus, sitting on the sofa together. Every line of firmware was co-authored with Claude (Anthropic) under our direction.
+>
+> Justus checks the GitHub star count on Sundays. If you think a 10-year-old shipping a kid-safe AI pet on real M5Stack hardware is cool, [**drop a ⭐**](https://github.com/marceld23/Pixel-Pets) and make his weekend. The full story is in [`CREDITS.md`](CREDITS.md).
 
 <p align="center">
   <img src="assets/photos/photo_pets.jpg" alt="Pixel Pets family — Muffin, two Goo-Goos and a Pip" width="640"><br>
@@ -253,7 +265,7 @@ Every line of firmware was written by AI assistants — primarily **Claude (Anth
 
 See [`CREDITS.md`](CREDITS.md) for the full story, and the in-app credits screen via Settings → Credits.
 
-## Help it grow
+## Support the project
 
 Pixel Pets is a family project — not a startup, no roadmap, no metrics dashboard. But we'd love for it to find more kids and dads who want to tinker.
 

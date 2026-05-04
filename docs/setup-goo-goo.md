@@ -63,5 +63,5 @@ The shared pet logic — moods, mini-games, foraging, ESP-NOW friends, weather, 
 
 ## Next steps
 
-- Open the [README's Help-it-grow section](../README.md#help-it-grow) for low-effort ways to support the project.
+- Open the [README's Support-the-project section](../README.md#support-the-project) for low-effort ways to support the project.
 - Want a friend for your Goo-Goo? Add a [Pip](setup-pip.md) accessory.

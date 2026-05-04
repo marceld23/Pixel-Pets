@@ -2,7 +2,7 @@
 
 Thanks for being interested. Pixel Pets is a small father-and-son hobby project — we're not a company, there's no contributor agreement, and no Slack to join. Contributing is just GitHub: open an issue, send a PR, share your build.
 
-The README's [Help it grow](README.md#help-it-grow) section covers the high-level *what's the most useful thing I can do?* question. This file covers the practical bits.
+The README's [Support the project](README.md#support-the-project) section covers the high-level *what's the most useful thing I can do?* question. This file covers the practical bits.
 
 ## Setting up the dev environment
 
