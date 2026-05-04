@@ -589,9 +589,13 @@ pre code { background: none; padding: 0; color: inherit; }
 
 .difficulty-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  /* Cap each card at 260 px instead of stretching to 1fr — otherwise on
+     wide viewports the four cards sprawl across the full section and read
+     as "left-aligned" against the narrower h2/section-lead above. */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 260px));
   gap: 14px;
   margin: 20px 0 32px;
+  justify-content: center;
 }
 .difficulty-card {
   background: var(--surface);
