@@ -38,14 +38,16 @@ constexpr uint32_t BTN_HOLD_SLEEP_MS     = 600;
 // Mobile power strategy.
 constexpr uint32_t DIM_AFTER_MS          = 30000;   // 30 s → half brightness
 constexpr uint32_t DARK_AFTER_MS         = 60000;   // 60 s → 5 % brightness
-constexpr uint32_t DISPLAY_OFF_AFTER_MS  = 300000;  // 5 min → display off
+constexpr uint32_t DEEP_SLEEP_AFTER_MS   = 180000;  // 3 min → ESP32 deep sleep
 constexpr uint8_t  BRIGHT_NORMAL         = 150;
 constexpr uint8_t  BRIGHT_DIM            =  60;
 constexpr uint8_t  BRIGHT_DARK           =  12;
 
-// Light-sleep period while the display is off. Wake every X ms for an
-// IMU check ("pet taken out of pocket" → display back on).
-constexpr uint32_t LIGHT_SLEEP_MS        = 1500;
+// Grace period after a force-sleep button press before we actually enter
+// deep sleep. Long enough that the user can cancel via BtnA if they hit
+// BtnB by accident, short enough that "I want to save power now" still
+// feels responsive.
+constexpr uint32_t FORCE_SLEEP_GRACE_MS  = 3000;
 
 // Battery threshold at boot. Below this percent we don't go into full
 // operation — show "Low Battery" briefly and deep-sleep, otherwise the

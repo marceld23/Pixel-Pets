@@ -10,11 +10,16 @@
 // State machine:
 //   Idle      → display shows treat + hint, ready for input
 //   Throwing  → ~800 ms post-shake animation (treat flies up + fades)
-//   Sleeping  → 30 s idle → Zzz screen (auto-dims separately)
+//   Sleeping  → 60 s idle → Zzz screen
+//
+// Power ramp:
+//   30 s → display dims to BRIGHT_DIM
+//   60 s → BRIGHT_DARK + Sleeping UI
+//   3 min → ESP32 deep sleep, woken by the power button (GPIO35)
 //
 // Inputs:
 //   BtnA  — cycle Apple → Carrot → Bone → Apple
-//   BtnB  — force sleep
+//   BtnB  — force sleep (3 s grace, then deep sleep)
 //   shake — throw the currently selected treat
 //
 // Compiled only in [env:pip] / [env:pip-s3].
@@ -23,7 +28,6 @@
 #include <M5Unified.h>
 #include <Preferences.h>
 #include <math.h>
-#include <esp_sleep.h>
 #include <esp32-hal-cpu.h>
 
 #include "target_caps.h"
@@ -42,6 +46,10 @@ struct PipState {
     pip::UiState   state              = pip::UiState::Idle;
     pip::MenuPage  page               = pip::MenuPage::Empty;
     bool           forceSleep         = false;
+    // Set when forceSleep flips from false to true. Used to gate the
+    // grace period before we actually drop into deep sleep, so an
+    // accidental BtnB press can be cancelled with a BtnA click.
+    uint32_t       forceSleepStartMs  = 0;
     uint32_t       lastInteractionMs  = 0;
     uint32_t       throwStartMs       = 0;
     uint32_t       lastSavedMs        = 0;
@@ -224,14 +232,18 @@ void updateUiState(uint32_t now) {
 // the threshold is crossed during the press.
 void handleButtons(uint32_t now) {
     if (M5.BtnA.wasHold()) {
-        g_pet.forceSleep = true;
+        g_pet.forceSleep        = true;
+        g_pet.forceSleepStartMs = now;
         pip::play(pip::Sound::Sleepy);
         return;
     }
     if (M5.BtnA.wasClicked()) {
         if (g_pet.forceSleep) {
-            // Wake from forced sleep instead of cycling pages.
-            g_pet.forceSleep = false;
+            // Wake from forced sleep instead of cycling pages — only
+            // works while we're still inside the grace window before
+            // deep sleep kicks in.
+            g_pet.forceSleep        = false;
+            g_pet.forceSleepStartMs = 0;
             g_pet.lastInteractionMs = now;
             pip::play(pip::Sound::Wake);
             return;
@@ -239,7 +251,8 @@ void handleButtons(uint32_t now) {
         cyclePage(now);
     }
     if (M5.BtnB.wasClicked()) {
-        g_pet.forceSleep = true;
+        g_pet.forceSleep        = true;
+        g_pet.forceSleepStartMs = now;
         pip::play(pip::Sound::Sleepy);
     }
 }
@@ -272,30 +285,44 @@ void saveState() {
 }
 
 // ── Display power (mobile strategy) ────────────────────────────────────────
+//
+// Two-step idle ramp:
+//   30 s → BRIGHT_DIM
+//   60 s → BRIGHT_DARK + Sleeping UI (set by updateUiState)
+//   3 min → ESP32 deep sleep, woken by the power button
+//
+// Force-sleep (BtnB / BtnA-hold) skips the ramp: it shows the Zzz UI for
+// FORCE_SLEEP_GRACE_MS so an accidental press can be undone with BtnA,
+// then drops into deep sleep too.
 uint8_t g_brightness = pip::BRIGHT_NORMAL;
 uint8_t g_curBrightness = 0xFF;
-bool    g_displayAsleep = false;
+
+void enterDeepSleep() {
+    Serial.println(F("[pip] entering deep sleep"));
+    saveState();
+    M5.Speaker.end();
+    // M5.Power.deepSleep(0, true) handles M5.Display.sleep(), enables
+    // ext0/ext1 wakeup on the board's _wakeupPin (GPIO35 = power button
+    // on StickC Plus 2), then calls esp_deep_sleep_start(). 0 = no timer
+    // wakeup; the device only comes back via the power button.
+    M5.Power.deepSleep(0, true);
+}
 
 void applyDisplayPower(uint32_t now) {
     uint32_t idle = now - g_pet.lastInteractionMs;
-    uint8_t  target;
-    bool     wantSleep = false;
-    if      (idle >= pip::DISPLAY_OFF_AFTER_MS) { target = 0;                 wantSleep = true; }
-    else if (idle >= pip::DARK_AFTER_MS)        { target = pip::BRIGHT_DARK;  }
-    else if (idle >= pip::DIM_AFTER_MS)         { target = pip::BRIGHT_DIM;   }
-    else                                         { target = g_brightness;     }
 
-    if (wantSleep && !g_displayAsleep) {
-        M5.Display.setBrightness(0);
-        M5.Display.sleep();
-        g_displayAsleep = true;
-        g_curBrightness = 0;
-        return;
+    bool forceSleepRipe = g_pet.forceSleep
+        && (now - g_pet.forceSleepStartMs) >= pip::FORCE_SLEEP_GRACE_MS;
+    if (idle >= pip::DEEP_SLEEP_AFTER_MS || forceSleepRipe) {
+        enterDeepSleep();
+        // unreachable
     }
-    if (!wantSleep && g_displayAsleep) {
-        M5.Display.wakeup();
-        g_displayAsleep = false;
-    }
+
+    uint8_t target;
+    if      (idle >= pip::DARK_AFTER_MS) target = pip::BRIGHT_DARK;
+    else if (idle >= pip::DIM_AFTER_MS)  target = pip::BRIGHT_DIM;
+    else                                 target = g_brightness;
+
     if (target != g_curBrightness) {
         M5.Display.setBrightness(target);
         g_curBrightness = target;
@@ -500,20 +527,8 @@ void loop() {
         saveState();
     }
 
-    // Display power (auto-dim).
+    // Display power (auto-dim, then deep sleep).
     applyDisplayPower(now);
-    if (g_displayAsleep) {
-        // Tear down the speaker before light-sleep: the buzzer's LEDC
-        // channel pops audibly when it stops/restarts at sleep entry/exit
-        // every ~1.5 s, which manifests as a slow "click click" while Pip
-        // is supposed to be silent. Re-init on wake; the cost is well
-        // under the per-cycle wake overhead and silence wins.
-        M5.Speaker.end();
-        esp_sleep_enable_timer_wakeup((uint64_t)pip::LIGHT_SLEEP_MS * 1000ULL);
-        esp_light_sleep_start();
-        M5.Speaker.begin();
-        return;
-    }
 
     // Render.
     pip::PipView v{};
