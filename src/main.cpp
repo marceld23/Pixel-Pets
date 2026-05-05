@@ -1177,11 +1177,9 @@ static void applyActivityReward(uint32_t now) {
     newBest = true;
   }
 
-  if (boostHap > 0) {
-    changeHappiness(+boostHap, now);
-    spawnFloatToBar(FloatType::Heart, petHeadX(), petHeadY(),
-                    TargetBar::Happiness, now);
-  }
+  changeHappiness(+boostHap, now);
+  spawnFloatToBar(FloatType::Heart, petHeadX(), petHeadY(),
+                  TargetBar::Happiness, now);
   if (boostEng > 0) {
     changeEnergy(+boostEng, now);
   }
@@ -3335,7 +3333,7 @@ static void handleTouchCameraMode(int tx, int ty, bool pressed,
   if (ok && jpg && len > 0) {
     ok = photo_store::save(jpg, len);
   }
-  if (jpg) free(jpg);
+  free(jpg);
 
   g_pet.cameraSaveOverlay        = true;
   g_pet.cameraSaveOverlayUntilMs = now + kCameraSaveOverlayMs;
@@ -6220,9 +6218,7 @@ void loop() {
   if (g_pet.persisted.needs.energy != energyBefore) {
     g_pet.engLastChangeMs = now;
   }
-  if (g_pet.persisted.needs.happiness != /*tracked elsewhere*/0) {
-    // happiness/fullness decay is silent; we don't pulse on every −1.
-  }
+  // happiness/fullness decay is silent; we don't pulse on every −1.
 
   // Sleep regen visualization: occasional Z float toward energy bar
   if (sleeping && now - g_pet.lastSleepRegenMs > SLEEP_REGEN_FLOAT_MS) {

@@ -208,15 +208,13 @@ void drawCleaningButton(M5Canvas& c, uint8_t pileCount, uint32_t now_ms) {
   c.drawLine(cx - 11, cy + 7, cx + 11, cy - 9, red);
 
   // Tiny badge in the corner with the count
-  if (pileCount > 0) {
-    char buf[4];
-    snprintf(buf, sizeof(buf), "%u", (unsigned)pileCount);
-    c.setTextDatum(top_right);
-    c.setTextSize(1);
-    c.setTextColor(glyph);
-    c.drawString(buf, r.x + r.w - 4, r.y + 3);
-    c.setTextDatum(top_left);
-  }
+  char buf[4];
+  snprintf(buf, sizeof(buf), "%u", (unsigned)pileCount);
+  c.setTextDatum(top_right);
+  c.setTextSize(1);
+  c.setTextColor(glyph);
+  c.drawString(buf, r.x + r.w - 4, r.y + 3);
+  c.setTextDatum(top_left);
 }
 
 // Falling rain — stripes of blue raindrops at varying speeds.
@@ -3304,7 +3302,7 @@ void drawActivityCrossGame(M5Canvas& c, const ActivityView& v) {
   int row = v.petRow;
   if (row < 0) row = 0;
   if (row > 5) row = 5;
-  int py = (row == 0) ? 222 : (row <= 5 ? kCrossLaneY[row - 1] - 2 : 70);
+  int py = (row == 0) ? 222 : kCrossLaneY[row - 1] - 2;
   if (row >= 5) py = 72;
   drawPetMini(c, kCrossPetX, py, v.animal);
 
@@ -3447,12 +3445,12 @@ void drawActivityGameOver(M5Canvas& c, const ActivityView& v) {
     // Run counter underneath the label so the user sees how many tries
     // are left without extra UI clutter.
     if (v.maxPlaysPerSession > 0) {
-      char buf[12];
-      snprintf(buf, sizeof(buf), "%u / %u",
+      char playsBuf[12];
+      snprintf(playsBuf, sizeof(playsBuf), "%u / %u",
                (unsigned)v.playsInSession, (unsigned)v.maxPlaysPerSession);
       c.setTextSize(1);
       c.setTextColor(fg);
-      c.drawString(buf, r.x + r.w / 2, r.y + r.h / 2 + 10);
+      c.drawString(playsBuf, r.x + r.w / 2, r.y + r.h / 2 + 10);
     }
   }
   // OK button — secondary (neutral), ends the game and returns to the
@@ -7574,7 +7572,6 @@ void drawMediaSelectScreen(M5Canvas& c, const MediaSelectView& v) {
     bool radioCell   = (i == 5);
     bool cameraCell  = (i == 6);
     bool galleryCell = (i == 7);
-    bool friendlyCell = friendsCell || radioCell || cameraCell || galleryCell;
     uint16_t bg     = friendsCell ? c.color565(220, 240, 220) :
                       radioCell   ? c.color565(245, 230, 200) :
                       cameraCell  ? c.color565(225, 215, 240) :
