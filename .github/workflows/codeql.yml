@@ -71,6 +71,7 @@ jobs:
         with:
           languages: c-cpp
           queries: security-and-quality
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: Build firmware (CodeQL traces compiles)
         run: pio run -e ${{ matrix.env }}
