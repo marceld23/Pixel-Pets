@@ -71,12 +71,31 @@ jobs:
         with:
           languages: c-cpp
           queries: security-and-quality
-          config-file: ./.github/codeql/codeql-config.yml
 
       - name: Build firmware (CodeQL traces compiles)
         run: pio run -e ${{ matrix.env }}
 
+      # paths-ignore in CodeQL config doesn't work for compiled languages —
+      # the build tracer extracts every file the compiler touches, including
+      # .pio/libdeps/ third-party libs. We filter the SARIF post-analysis
+      # instead, which is the GitHub-recommended workaround.
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
+          category: "/language:c-cpp/env:${{ matrix.env }}"
+          output: sarif-results
+          upload: failure-only
+
+      - name: Filter third-party libs out of SARIF
+        run: |
+          jq 'del(.runs[].results[] | select(
+                .locations[]?.physicalLocation.artifactLocation.uri
+                | startswith(".pio/")
+              ))' sarif-results/cpp.sarif > sarif-results/cpp.filtered.sarif
+          mv sarif-results/cpp.filtered.sarif sarif-results/cpp.sarif
+
+      - name: Upload filtered SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: sarif-results/cpp.sarif
           category: "/language:c-cpp/env:${{ matrix.env }}"
