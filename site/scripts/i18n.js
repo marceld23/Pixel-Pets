@@ -3,12 +3,16 @@
 // items inside <ul data-en-items="a|b|c"> are also handled.
 //
 // Default language is derived from navigator.language; the user's choice
-// is stored in localStorage so it survives reloads.
+// is stored in localStorage so it survives reloads. ?lang=en / ?lang=de
+// in the URL wins over both — useful for shareable bookmarks and for
+// linking the EN page to non-German visitors.
 
 (function () {
 'use strict';
 
 function pickDefault() {
+  const url = new URLSearchParams(location.search).get('lang');
+  if (url === 'de' || url === 'en') return url;
   const stored = localStorage.getItem('lang');
   if (stored === 'de' || stored === 'en') return stored;
   const nav = (navigator.language || 'en').toLowerCase();
