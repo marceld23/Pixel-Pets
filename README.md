@@ -17,6 +17,7 @@
   <a href="#for-makers">For makers</a> ·
   <a href="#documentation">Documentation</a> ·
   <a href="#support-the-project">Support the project</a> ·
+  <a href="#contributing">Contributing</a> ·
   <a href="#version-history">Version history</a>
 </p>
 
@@ -269,18 +270,19 @@ See [`CREDITS.md`](CREDITS.md) for the full story, and the in-app credits screen
 
 ## Support the project
 
-Pixel Pets is a family project — not a startup, no roadmap, no metrics dashboard. But we'd love for it to find more kids and dads who want to tinker.
-
-Things that genuinely help, in order of effort:
+Pixel Pets is a family project — not a startup, no roadmap, no metrics dashboard. But we'd love for it to find more kids and dads who want to tinker. The cheapest things that genuinely help:
 
 - **Drop a ⭐ on the repo.** It's the cheapest signal that something resonated, and it really does help the project surface to other curious people scrolling GitHub. Justus checks the count on Sundays.
-- **Or leave a "respect" on Hackster.io** — the project page is at [hackster.io/marcelduetscher/pixel-pets-...](https://www.hackster.io/marcelduetscher/pixel-pets-an-ai-assisted-virtual-pet-family-for-m5stack-baa76c). Same idea, different community: Hackster's respects + comments help it surface for other makers there.
-- **Share what you built.** Photos, videos, mods — open a GitHub Discussion or Issue. Even a "got it running, kid loves it" message is encouraging.
-- **Suggest a feature.** New animals, new mini-games, new scenes, new Pip interactions — open an Issue. Justus has Strong Opinions™ on what feels right; pitch yours.
-- **Send a PR.** Good first contributions: a new sound, a new scene, a face animation, a mini-game, an extra language string. [`docs/architecture.md`](docs/architecture.md) explains where things live.
+- **Or leave a "respect" on Hackster.io** — same idea, different community: project page at [hackster.io/marcelduetscher/pixel-pets-…](https://www.hackster.io/marcelduetscher/pixel-pets-an-ai-assisted-virtual-pet-family-for-m5stack-baa76c).
 - **Try it with a kid you know.** That's actually the most valuable feedback we get — what works, what confuses, what's missing for a 7-year-old vs a 10-year-old.
 
-No CLA, no contributor agreement, no Slack to join. Just GitHub.
+## Contributing
+
+We'd love your help — code, ideas, bug reports, translations, a new sound, a face animation, an extra language string, a photo of a kid trying it out. All welcome. No CLA, no contributor agreement, no Slack to join. Just GitHub.
+
+- 📘 [**Contributing guide**](CONTRIBUTING.md) — setup, conventions, how to get a PR merged. Good first contributions: a new sound, a new scene, a face animation, a mini-game, an extra language string. [`docs/architecture.md`](docs/architecture.md) explains where things live.
+- 💬 [**Discussions**](https://github.com/marceld23/Pixel-Pets/discussions) — questions, share what you built, show-and-tell.
+- 🐛 [**Issues**](https://github.com/marceld23/Pixel-Pets/issues) — bug reports, feature requests, "Justus has Strong Opinions™ on what feels right; pitch yours".
 
 ## Version history
 
@@ -337,3 +339,13 @@ First stable release. Three pet variants and one accessory, all verified end-to-
 [MIT License](LICENSE) — open source, free to use, modify and redistribute.
 
 Note: the web radio feature links against [`schreibfaul1/ESP32-audioI2S`](https://github.com/schreibfaul1/ESP32-audioI2S), which is GPL v3.0. Binaries built from the `cores3` / `core2` / `visu` envs therefore inherit GPL v3.0 obligations when redistributed. The `pip` env doesn't link the audio library and stays MIT all the way through. Source code in this repository is MIT regardless of which env you build. See [`LICENSE`](LICENSE) for the full third-party-licenses block.
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=marceld23%2FPixel-Pets&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=marceld23/Pixel-Pets&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=marceld23/Pixel-Pets&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=marceld23/Pixel-Pets&type=date&legend=top-left" />
+ </picture>
+</a>
