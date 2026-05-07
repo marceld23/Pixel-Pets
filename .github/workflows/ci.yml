@@ -45,6 +45,17 @@ jobs:
       - name: Report binary size
         run: pio run -e ${{ matrix.env }} -t size | tail -40
 
+      # Make the freshly built .bin downloadable from the Actions run page.
+      # Useful when local builds are blocked (Windows scons/tempfile quirks)
+      # so a teammate can grab the matching binary and flash via M5Burner /
+      # esptool.py without re-running the build themselves.
+      - name: Upload firmware binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.env }}
+          path: .pio/build/${{ matrix.env }}/firmware.bin
+          retention-days: 14
+
   test:
     name: pio test -e native (pure-logic units)
     runs-on: ubuntu-latest
