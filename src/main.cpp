@@ -4567,7 +4567,7 @@ static void render(uint32_t now) {
     WifiSetupView wv{};
     wv.now_ms      = now;
     wv.state       = (uint8_t)wifiSetupGetState();
-    wv.apName      = "muffin-setup";
+    wv.apName      = TARGET_AP_NAME;
     wv.apIp        = "192.168.4.1";
     wv.pendingSsid = wifiSetupPendingSsid();
     drawWifiSetupScreen(g_canvas, wv);

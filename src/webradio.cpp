@@ -236,10 +236,13 @@ void tick(uint32_t now_ms) {
             }
             return;
         }
-        // WiFi is up — bring up audio stack if not already.
-        if (!g_audio) {
-            claimI2sForAudio();
-        }
+        // WiFi is up — claim I2S every time. claimI2sForAudio() is
+        // idempotent (only the Audio object itself is constructed once),
+        // and we *must* call it on every start because stop() runs
+        // M5.Speaker.begin(), which grabs the I2S bus back. Without
+        // re-claiming here the decoder runs but plays into a bus M5
+        // owns again — silent webradio while pet sounds keep working.
+        claimI2sForAudio();
         // Open stream.
         tryConnectStream();
         // connecttohost returns true if the host was reached, but the
