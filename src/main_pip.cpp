@@ -301,6 +301,30 @@ void enterDeepSleep() {
     Serial.println(F("[pip] entering deep sleep"));
     saveState();
     M5.Speaker.end();
+
+#if CONFIG_IDF_TARGET_ESP32S3
+    // ESP32-S3 USB-Serial/JTAG detach BEFORE esp_deep_sleep_start().
+    //
+    // Documented Espressif behavior (not a bug): when the chip enters
+    // deep sleep, the USB clocks are gated but the D+ 1.5 kΩ pull-up
+    // stays asserted by the PHY. From the host's point of view the
+    // device looks "still attached, just frozen" — it never sees a
+    // detach, so on the next reset the new VID 303A enumeration never
+    // fires and the device is *invisible* to the host. Once that state
+    // is reached the only fix is unplug-wait-replug (drains the D+
+    // pull-up) or hold the reset pin for 2 s to force download mode.
+    //
+    // The recommended firmware-side prevention is to explicitly tear
+    // down the USB-CDC stack before sleeping so the host sees a clean
+    // disconnect first: Serial.flush() + Serial.end() + 100 ms grace
+    // for the host to register the detach. Reference:
+    //   https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-guides/usb-serial-jtag-console.html
+    //   https://github.com/espressif/arduino-esp32/issues/6581
+    Serial.flush();
+    Serial.end();
+    delay(100);
+#endif
+
     // M5.Power.deepSleep(0, true) handles M5.Display.sleep(), enables
     // ext0/ext1 wakeup on the board's _wakeupPin (GPIO35 = power button
     // on StickC Plus 2), then calls esp_deep_sleep_start(). 0 = no timer
@@ -452,6 +476,14 @@ void setup() {
             delay(2500);
             M5.Display.sleep();
             M5.Display.setBrightness(0);
+#if CONFIG_IDF_TARGET_ESP32S3
+            // See enterDeepSleep() for the full rationale — without
+            // this teardown the host loses sight of the device after
+            // sleep on the ESP32-S3.
+            Serial.flush();
+            Serial.end();
+            delay(100);
+#endif
             // 0 = unlimited — wakes on USB or power button.
             M5.Power.deepSleep(0);
         }
