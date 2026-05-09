@@ -30,6 +30,10 @@
 #include <math.h>
 #include <esp32-hal-cpu.h>
 
+#if CONFIG_IDF_TARGET_ESP32S3
+#  include <driver/gpio.h>
+#endif
+
 #include "target_caps.h"
 #include "i18n.h"
 #include "pip/face_pip.h"
@@ -310,19 +314,29 @@ void enterDeepSleep() {
     // stays asserted by the PHY. From the host's point of view the
     // device looks "still attached, just frozen" — it never sees a
     // detach, so on the next reset the new VID 303A enumeration never
-    // fires and the device is *invisible* to the host. Once that state
-    // is reached the only fix is unplug-wait-replug (drains the D+
-    // pull-up) or hold the reset pin for 2 s to force download mode.
+    // fires and the device is *invisible* to the host.
     //
-    // The recommended firmware-side prevention is to explicitly tear
-    // down the USB-CDC stack before sleeping so the host sees a clean
-    // disconnect first: Serial.flush() + Serial.end() + 100 ms grace
-    // for the host to register the detach. Reference:
+    // We tear down in three steps:
+    //   1. Close the Arduino USB-CDC driver (Serial.end + flush)
+    //   2. Force GPIO19 / GPIO20 (the D-/D+ pins on the ESP32-S3) into
+    //      input mode and drop the internal pull-ups. This collapses
+    //      the bus voltage so the host sees an unambiguous detach
+    //      instead of a frozen-but-attached device. Just Serial.end()
+    //      isn't enough on every M5-Stick variant — the PHY can keep
+    //      the D+ pull-up alive even after the driver releases the bus.
+    //   3. Give the host 200 ms to register the detach before the
+    //      clocks are gated. Tested empirically: 100 ms isn't always
+    //      enough on Windows.
+    // References:
     //   https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-guides/usb-serial-jtag-console.html
     //   https://github.com/espressif/arduino-esp32/issues/6581
     Serial.flush();
     Serial.end();
-    delay(100);
+    gpio_set_direction(GPIO_NUM_19, GPIO_MODE_INPUT);
+    gpio_set_direction(GPIO_NUM_20, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(GPIO_NUM_19, GPIO_FLOATING);
+    gpio_set_pull_mode(GPIO_NUM_20, GPIO_FLOATING);
+    delay(200);
 #endif
 
     // M5.Power.deepSleep(0, true) handles M5.Display.sleep(), enables
@@ -461,7 +475,17 @@ void setup() {
     // faster). Show a brief notice and deep-sleep until USB is plugged.
     {
         int batt = M5.Power.getBatteryLevel();
-        bool charging = M5.Power.isCharging();
+        // The PMIC's charging-detect needs a moment to stabilise after
+        // power-up. If we read it too early, isCharging() can falsely
+        // return false even with USB plugged in — and then the
+        // brownout-protection branch below puts us straight into deep
+        // sleep, looking like a "won't boot" failure. Poll with a 50 ms
+        // gap a few times so a real USB hookup gets seen.
+        bool charging = false;
+        for (int i = 0; i < 8 && !charging; ++i) {
+            charging = M5.Power.isCharging();
+            if (!charging) delay(50);
+        }
         Serial.printf("[pip] battery=%d%% charging=%d\n", batt, (int)charging);
         if (batt >= 0 && batt < pip::LOW_BATTERY_PCT && !charging) {
             M5.Display.setBrightness(40);
@@ -477,12 +501,15 @@ void setup() {
             M5.Display.sleep();
             M5.Display.setBrightness(0);
 #if CONFIG_IDF_TARGET_ESP32S3
-            // See enterDeepSleep() for the full rationale — without
-            // this teardown the host loses sight of the device after
-            // sleep on the ESP32-S3.
+            // See enterDeepSleep() for the full rationale of the
+            // 3-step USB-PHY detach.
             Serial.flush();
             Serial.end();
-            delay(100);
+            gpio_set_direction(GPIO_NUM_19, GPIO_MODE_INPUT);
+            gpio_set_direction(GPIO_NUM_20, GPIO_MODE_INPUT);
+            gpio_set_pull_mode(GPIO_NUM_19, GPIO_FLOATING);
+            gpio_set_pull_mode(GPIO_NUM_20, GPIO_FLOATING);
+            delay(200);
 #endif
             // 0 = unlimited — wakes on USB or power button.
             M5.Power.deepSleep(0);
