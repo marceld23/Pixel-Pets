@@ -17,10 +17,12 @@
 // sendTreat does the full lifecycle: power up WiFi + ESP-NOW → 3-burst
 // transmit → power down. Total radio time per call ≈ 150-200 ms.
 //
-// Receiver expects the LR PHY profile (matches Friends mode + the bigger
-// pet's pip_link listener). We don't reuse net.cpp's openEspNowRadio
-// helper here because Pip wants the absolute minimum init-time and skips
-// the diagnostic readback prints. The setup is otherwise identical.
+// Receiver expects the standard 802.11 B/G/N PHY profile (matches the
+// bigger pet's openEspNowRadio() in net.cpp). LR-mode interop turned
+// out to be unreliable across ESP32 ↔ ESP32-S3 — the receiver was
+// switched to BGN, so the Pip sender has to match. We don't reuse
+// net.cpp's openEspNowRadio helper here because Pip wants the absolute
+// minimum init-time and skips the diagnostic readback prints.
 
 namespace {
 
@@ -39,12 +41,19 @@ void loadMyId() {
 }
 
 bool radioUp() {
-    WiFi.mode(WIFI_STA);
+    // AP_STA mirrors openEspNowRadio() on the receiver side. On the
+    // ESP32-S3 receiver, pure WIFI_STA without an AP association silently
+    // drops most ESP-NOW broadcast frames; AP_STA gives the stack an AP
+    // MAC table to dispatch broadcasts against. The AP interface stays
+    // unused on the Pip sender side, but matching modes simplifies the
+    // RF symmetry.
+    WiFi.mode(WIFI_AP_STA);
     delay(20);
-    esp_wifi_set_ps(WIFI_PS_NONE);
     esp_wifi_set_max_tx_power(84);
-    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
+    esp_wifi_set_protocol(WIFI_IF_STA,
+        WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
     esp_wifi_set_channel(kEspNowChannel, WIFI_SECOND_CHAN_NONE);
+    esp_wifi_set_ps(WIFI_PS_NONE);   // last, so prior calls can't reset it
 
     if (esp_now_init() != ESP_OK) {
         Serial.println(F("[pip-link-tx] esp_now_init failed"));
