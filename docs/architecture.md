@@ -184,7 +184,7 @@ The face-detection tick is suspended (`setEnabled(false)`) during camera mode, g
 
 Background ESP-NOW listener that lets a bigger pet (Muffin / Visu / Goo-Goo) receive packets from a paired Pip. Currently wired: `kMsgPipTreat` (16) — shake-thrown treat, decoded into a `TreatHandler` callback that animates Eating face + Apple/Heart floats + happiness/fullness boost on the pet. msgType range 16..31 is reserved for Pip-link; Friends uses 0..7. Receiver-side dedup via a 5-slot eid ring shared in pattern with Friends.
 
-Reuses the Friends-mode 16-byte packet format (magic `GOOG`, msgType + senderId + animal + lang + 4-byte event-id) and the same Long-Range PHY profile that fixed the directional-RF regression in Friends. The `openEspNowRadio` / `closeEspNowRadio` helpers in `net.cpp` are shared between Friends and Pip-link so the radio setup stays identical.
+Reuses the Friends-mode 16-byte packet format (magic `GOOG`, msgType + senderId + animal + lang + 4-byte event-id) and the same radio setup: standard 802.11 B/G/N PHY in `WIFI_AP_STA` mode at full TX power, channel 6, all power-save off (1.0.0 used `WIFI_PROTOCOL_LR` here, but LR turned out not to be reliably interoperable across ESP32 ↔ ESP32-S3 — see the 1.0.1 changelog in `README.md`). The `openEspNowRadio` / `closeEspNowRadio` helpers in `net.cpp` are shared between Friends and Pip-link so the radio setup stays identical.
 
 Opt-in via `Persisted::pipMode` (Settings → page 4 toggle). When the toggle flips, `pip_link::begin / end` is called from the touch handler — the listener registers the ESP-NOW recv-cb and adds the broadcast peer; on disable, both are torn down and the radio is closed.
 

@@ -186,7 +186,7 @@ These were considered during the brainstorming pass but are deliberately deferre
 
 ### Protocol (shared with Friends mode — see `net.h`)
 
-16-byte packet, magic `GOOG`, dedup via 4-byte event-id, Long-Range PHY profile. Pip-link owns msgType range 16..31; Friends uses 0..7. The asymmetric-RF reliability lessons (LR PHY, dedup ring, max TX power) carry over for free. Currently only `kMsgPipTreat = 16` is wired; the other reservations (17 step report, 18 wand, 19 egg check-in, 20 shutter) are documented in `pip_link.h` and unused.
+16-byte packet, magic `GOOG`, dedup via 4-byte event-id. Pip-link owns msgType range 16..31; Friends uses 0..7. The asymmetric-RF reliability machinery carries over for free: standard 802.11 B/G/N at max TX power, `WIFI_AP_STA` mode (so the ESP32-S3 receiver doesn't drop broadcasts), the dedup ring, and unicast TX after the partner's MAC is known. (1.0.0 used `WIFI_PROTOCOL_LR` instead, but LR was not reliably interoperable across ESP32 ↔ ESP32-S3 — switched to B/G/N in 1.0.1.) Currently only `kMsgPipTreat = 16` is wired; the other reservations (17 step report, 18 wand, 19 egg check-in, 20 shutter) are documented in `pip_link.h` and unused.
 
 ### Commit lineage
 

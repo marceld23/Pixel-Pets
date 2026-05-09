@@ -139,18 +139,66 @@ We don't ship versioned firmware to a user base. If you remove a feature, delete
 
 ## Friends mode — RF reliability (don't accidentally regress)
 
-The Friends gift-exchange feature uses ESP-NOW broadcast on channel 6. We hit a **directional RF asymmetry** between two specific Core2 boards in development: one pet's recv path was systematically deaf to short bursts. Single-shot item packets were lost ~80–100 % of the time on the deaf direction.
+The Friends gift-exchange feature uses ESP-NOW on channel 6. The 1.0.1
+release rewrote the radio stack after a long debugging session that
+exposed several layered issues — directional RF asymmetry between two
+Core2s during development, then near-total failure between Core2 ↔
+CoreS3 once Muffin was added to the test set. The fix bundle below is
+what finally produced reliable 5/5 + 5/5 across every pet pair, in
+order of importance:
 
-The fix bundle that finally got reception to 5/5 + 5/5 (commit `1e6ef61`) contains, in order of importance:
+1. **`WIFI_PROTOCOL_11B|11G|11N`** in `openEspNowRadio` (NOT LR). 1.0.0
+   used `WIFI_PROTOCOL_LR` for the +12 dB sensitivity, but Espressif's
+   proprietary LR PHY is **not reliably interoperable across ESP32 ↔
+   ESP32-S3** — packets sent in LR didn't decode on the partner side,
+   which broke every Core2 ↔ CoreS3 / Visu pair. Standard B/G/N at
+   max TX power has plenty of margin for two pets in the same room.
+   **Don't switch back to LR** without re-running the cross-target
+   matrix.
+2. **`WIFI_AP_STA`** instead of `WIFI_STA` in `openEspNowRadio`. The
+   ESP32-S3 stack silently drops most ESP-NOW broadcast frames in
+   disconnected-STA mode. AP_STA gives it an AP MAC table to dispatch
+   broadcasts against. Without this, Muffin + Visu show `rxCb` stuck
+   at 0 while sending fine.
+3. **Unicast TX once partner MAC is known.** In the Sending state we
+   capture the source MAC from the first received packet and
+   `esp_now_add_peer()` it as a unicast peer; from then on
+   `friendsSendPacket()` addresses the partner directly instead of
+   broadcasting. 802.11 unicast has MAC-layer ACK + retry; broadcast
+   is fire-and-forget and the CoreS3 RX path frequently drops it.
+4. **Reach-back Ready** in the Sending state. The faster tapper used
+   to go silent the moment they matched, leaving the slower partner
+   stuck on "Waiting for friend" until the 60 s timeout. Now Sending
+   keeps emitting `kMsgRendezvousReady` until something
+   content-bearing (item or `kMsgSessionDone`) arrives from the
+   partner.
+5. **Single-packet bursts + jittered re-broadcasts.** 1.0.0 used
+   3-packet item bursts and 4-packet match bursts at fixed 20-ms
+   spacing. Two pets tapping simultaneously would burst into each
+   other and lose all their packets to RF collision. 1.0.1 sends 1
+   packet per event and lets the periodic re-broadcaster (~500 ms
+   item, ~700 ms done, ~800 ms reach-back, all jittered ±300 ms) do
+   the redundancy work. Jitter breaks lockstep with the partner
+   within a couple of beats.
+6. **Receiver-side dedup** via a 5-slot eid ring — same eid arriving
+   multiple times = same gift, count once. Unchanged from 1.0.0;
+   essential for the round-robin re-broadcaster to be safe.
+7. **Hard WiFi reset** in `openEspNowRadio` (`esp_wifi_stop()` + 50 ms
+   + `WiFi.mode(WIFI_AP_STA)` + 50 ms) — without this,
+   `esp_wifi_set_channel(6)` was silently dropped on one of the two
+   devices in 1.0.0.
+8. **Diagnostic logs**: `register_recv_cb=` result,
+   `esp_wifi_set_channel=` result + readback, `rxCb` counter in the
+   Sending heartbeat. **Keep them.** The next time something
+   regresses, those logs are how you'll know — they're the entire
+   reason 1.0.1 could be diagnosed at all.
 
-1. **WIFI_PROTOCOL_LR** in `friendsBegin` — Espressif-proprietary Long Range PHY (~512 Kbps, +12 dB sensitivity). Restored to `B|G|N` in `friendsEnd` so the next AP connect works.
-2. **Item burst** — each user tap sends 3 packets ~20 ms apart, all with the same 32-bit `event-id` in packet bytes 12–15.
-3. **Receiver-side dedup** via a 5-slot eid ring — same eid arriving multiple times = same gift, count once.
-4. **Item outbox + 250 ms re-broadcast** in the Sending tick. Until `friendsRemoteDone`, every item we sent gets re-broadcast round-robin. The receiver dedups, so duplicates are free; the sender gets many independent chances at marginal RF conditions.
-5. **Hard WiFi reset** in `friendsBegin` (`esp_wifi_stop()` + 50 ms + `WiFi.mode(WIFI_STA)` + 50 ms) — without this, `esp_wifi_set_channel(6)` was being silently dropped on one of the two devices.
-6. Diagnostic logs: `register_recv_cb=` result, `esp_wifi_set_channel=` result + readback, `rxCb` counter in the Sending heartbeat. **Keep them.** The next time something regresses, those logs are how you'll know.
-
-If you change anything in the friends path (`src/net.cpp` lines ~880–1200), ask yourself: does this still survive directional RF asymmetry? Test on two Core2s with `pio device monitor` running on both ports.
+If you change anything in the friends path (`src/net.cpp` lines
+~1000–1700), ask yourself: does this still survive directional RF
+asymmetry **and** ESP32 ↔ ESP32-S3 cross-target? Test with at least
+two different chip families simultaneously (e.g. Core2 + CoreS3) with
+`pio device monitor` running on both ports — the 1.0.1 bugs only
+showed up across chip families.
 
 ---
 
@@ -277,7 +325,9 @@ If you can't test on hardware, say so explicitly in your reply rather than claim
 | Capability flag check missing on a `#include` | feature `.cpp` and call site in `main.cpp` | wrap both in `#if TARGET_HAS_<flag>` |
 | WiFi.setSleep(false) silently fails after esp_wifi_stop | net.cpp friendsBegin | use `esp_wifi_set_ps(WIFI_PS_NONE)` + log result |
 | Single-target build hides another target's break | local dev | run all four envs (or at least core2 + cores3 + pip-s3) |
-| Friends item lost despite RF working | net.cpp Sending | confirm `WIFI_PROTOCOL_LR` is set in `friendsBegin` |
+| Friends item lost despite RF working | net.cpp Sending | confirm BGN protocol + AP_STA in `openEspNowRadio` (NOT LR — see Friends section); also check the unicast peer was added when the partner MAC was first seen |
+| Muffin / Visu sees `rxCb=0` while partner sends | net.cpp `openEspNowRadio` | mode must be `WIFI_AP_STA`, not `WIFI_STA`. CoreS3 stack drops broadcasts in disconnected-STA mode |
+| Pip-S3 disappears from USB after deep sleep | main_pip.cpp `enterDeepSleep` | confirm the `#if CONFIG_IDF_TARGET_ESP32S3` block does `Serial.end() + delay(100)` BEFORE `M5.Power.deepSleep()` |
 | StickC-S3 won't flash, "Write timeout" | hardware | hold BtnA + reset to enter download mode (see [`docs/setup-pip.md`](docs/setup-pip.md)) |
 | `pio device monitor` holds the COM port | local dev | close monitor before flashing the same port |
 
