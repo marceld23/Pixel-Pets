@@ -286,6 +286,47 @@ We'd love your help — code, ideas, bug reports, translations, a new sound, a f
 
 ## Version history
 
+### 1.0.1 — May 2026
+
+Reliability release — same features as 1.0.0, but the rough edges that surfaced in the days after launch are fixed. No protocol changes; existing pets keep their NVS state when upgraded.
+
+**Friends mode — now actually reliable across all pet pairs:**
+
+- Switched the ESP-NOW PHY from LR to standard 802.11 B/G/N. The LR mode had reproducible interop problems between ESP32 (Goo-Goo) and ESP32-S3 (Muffin / Visu) — packets sent in LR didn't decode on the other side
+- Pets now run in `WIFI_AP_STA` instead of pure `WIFI_STA` — the ESP32-S3 stack silently dropped most ESP-NOW broadcast frames in disconnected-STA mode
+- Once the partner's MAC is known, gift packets switch from broadcast to unicast. 802.11 unicast has ACK + retry at the MAC layer; broadcast was fire-and-forget and the CoreS3 RX path frequently lost it
+- Reach-back Ready in the Sending state — the faster tapper used to go silent the moment they matched, leaving the slower partner stuck on "Waiting for friend" until the 60 s timeout
+- Smaller initial bursts (1 packet instead of 3-4) and jittered re-broadcast intervals — avoids the "two pets burst into each other" RF collision that froze the rendezvous
+
+**Web radio — stutter-free, knacks-free, and tap-resilient:**
+
+- Audio decoder now runs on its own FreeRTOS task pinned to core 1, separate from the main loop. Pet animations / touch sampling / friends ticks no longer starve the MP3 decoder mid-frame
+- `WiFi.setSleep(false)` while streaming — keeps the radio listening continuously instead of waking only on DTIM beacons
+- Display sleep no longer kills the audio: the main loop stays at 1 ms cadence as long as media is active
+- Pet sound effects (greet / tickle / eat …) are suppressed during radio playback so they don't fight the audio library for the I2S bus — fixes the audible knacks
+- Volume slider now actually applies to the stream, live: was hardcoded to ~80 %
+- Listen-lock: while the radio plays, the pet ignores every interaction except a tap on the Media button (which still toggles the radio off). Hard buttons A / B / C are gated too. Touching the pet no longer yanks it into a sound-effect animation that stops the music
+- "Brauche WLAN" overlay when the radio is tapped without any saved WiFi credentials — bounces back to the chooser instead of silently timing out after 10 s
+
+**Pip — no more "bricked-looking" Stick S3:**
+
+- The Pip-S3 firmware now explicitly tears down the USB-CDC stack before deep sleep. Without this, the ESP32-S3's D+ pull-up stayed asserted across deep sleep — the host never saw a detach, and on the next reset the device was *invisible* (no COM port, no `VID 303A` enumeration). Recovery used to require a 60 s unplug or holding the reset pinhole; that's no longer needed
+- Pip's treat / wand sender is now on B/G/N + AP_STA to match the home-pet receiver after the Friends-mode PHY switch above. Without this fix Pip's announcements wouldn't reach Goo-Goo / Muffin / Visu
+
+**Site / CI / docs:**
+
+- Site supports `?lang=de` / `?lang=en` URL overrides for shareable language-pinned links
+- README split into separate Support and Contributing sections, Star-History chart added
+- Module-LLM setup script extracted from the README into `scripts/setup-module-llm.sh` with a CI lint
+- Release workflow has a manual dry-run mode for testing before tagging
+- Per-env firmware artifacts (`firmware-cores3` / `firmware-core2` / `firmware-visu` / `firmware-pip`) uploaded on every CI run, downloadable for 14 days from the Actions page
+- Dependabot, typos, CodeQL, lychee + `pio check` CI added; CodeQL findings cleared
+
+**Smaller bug fixes:**
+
+- WiFi-setup screen now shows the correct AP name per target (`muffin-setup` / `goo-goo-setup` / `visu-setup`) instead of always saying `muffin-setup`
+- Web radio plays sound on its second start in the same session (was silent because `M5.Speaker.begin()` had grabbed the I2S bus back)
+
 ### 1.0.0 — May 2026
 
 First stable release. Three pet variants and one accessory, all verified end-to-end on hardware.
