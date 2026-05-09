@@ -20,6 +20,13 @@
 
 #include "target_caps.h"
 
+// Forward declaration for the file-static friendsSendPacket so the
+// non-blocking burst helpers in the anonymous namespace below can call
+// it. The definition lives further down in the file at global scope
+// (it's `static` for internal linkage); declaring it here keeps the
+// helpers and the definition matching the same overload.
+static void friendsSendPacket(uint8_t type, uint32_t eid = 0);
+
 namespace {
 
 constexpr const char* kAPName = TARGET_AP_NAME;
@@ -89,6 +96,13 @@ uint32_t     g_friendsLastSendAt = 0;
 uint8_t      g_friendsMyAnimal  = 0;
 uint8_t      g_friendsMyLang    = 0;
 uint8_t      g_friendsMyId[4]   = {0};
+// Full 6-byte MAC of the partner pet, captured from the first received
+// packet's source MAC. Used to switch ESP-NOW TX from broadcast to
+// unicast once the partner is known: the ESP32-S3 reliably loses
+// broadcast RX in disconnected-STA mode, but unicast frames have ACK +
+// retry at the 802.11 layer and reach the partner consistently.
+uint8_t      g_friendsRemoteMac[6]  = {0};
+bool         g_friendsHasRemoteMac  = false;
 uint8_t      g_friendsPeerAnimal = 0;
 bool         g_friendsHasMyId   = false;
 bool         g_friendsEspNowReady = false;
@@ -134,6 +148,71 @@ uint8_t             g_friendsTxOutboxCount = 0;
 uint8_t             g_friendsTxOutboxRotIdx = 0;
 uint32_t            g_friendsLastItemRebroadcastMs = 0;
 
+// Non-blocking burst queue: replaces the in-place `for (i=0..n) { send;
+// delay(20); }` loops in friendsSendItem / friendsSignalDone /
+// friendsTriggerRendezvous / the rendezvous→sending match burst. Those
+// blocked the main loop for 60–140 ms while sending, during which the
+// ESP-NOW radio cannot receive. With two pets tapping the 5th gift at
+// the same time, both bursts overlap and *every* packet is mutually
+// drowned — leaving one pet stuck on the wait screen until the 60 s
+// session timeout. We now enqueue all but the first packet and let
+// friendsTick drain at most one per ~20 ms, freeing the radio between
+// sends and naturally desynchronising two pets after the first send.
+struct FriendsPendingTx {
+  uint8_t  type;
+  uint32_t eid;
+};
+constexpr uint8_t kPendingTxCap   = 16;   // 5 item × 3 burst + 4 done worst-case
+// Burst spacing inside a single user-tap. Originally 20 ms (matches the
+// old in-place delay() loop), but on the ESP32-S3 (CoreS3 / Muffin) a
+// 60 ms back-to-back TX burst kills the RX path long enough that the
+// partner's items get repeatedly missed. 100 ms spreads the 3-packet
+// burst over ~300 ms instead, giving the RX path time to breathe between
+// sends. Trade-off: a single tap takes longer to fully air, but the
+// recipient is far more likely to actually hear the burst.
+constexpr uint32_t kPendingTxGapMs = 100;
+FriendsPendingTx g_pendingTx[kPendingTxCap];
+uint8_t  g_pendingTxHead   = 0;
+uint8_t  g_pendingTxCount  = 0;
+uint32_t g_pendingTxLastAt = 0;
+
+static void pendingTxClear() {
+  g_pendingTxHead   = 0;
+  g_pendingTxCount  = 0;
+  g_pendingTxLastAt = 0;
+}
+
+static void pendingTxEnqueue(uint8_t type, uint32_t eid) {
+  if (g_pendingTxCount >= kPendingTxCap) return;     // overflow → drop
+  uint8_t pos = (uint8_t)((g_pendingTxHead + g_pendingTxCount) % kPendingTxCap);
+  g_pendingTx[pos].type = type;
+  g_pendingTx[pos].eid  = eid;
+  g_pendingTxCount++;
+}
+
+// Send the first packet of a burst immediately (so the user gets
+// instantaneous TX) and queue the remaining (totalCount-1) for the tick
+// drainer. lastAt is set to now so the drainer waits the full gap before
+// the second send.
+static void burstSend(uint8_t type, uint32_t eid, uint8_t totalCount) {
+  if (totalCount == 0) return;
+  friendsSendPacket(type, eid);
+  g_pendingTxLastAt = millis();
+  for (uint8_t i = 1; i < totalCount; ++i) {
+    pendingTxEnqueue(type, eid);
+  }
+}
+
+static void pendingTxDrain(uint32_t now_ms) {
+  if (g_pendingTxCount == 0) return;
+  if ((int32_t)(now_ms - g_pendingTxLastAt) < (int32_t)kPendingTxGapMs) return;
+  FriendsPendingTx& p = g_pendingTx[g_pendingTxHead];
+  friendsSendPacket(p.type, p.eid);
+  g_pendingTxHead = (uint8_t)((g_pendingTxHead + 1) % kPendingTxCap);
+  g_pendingTxCount--;
+  g_pendingTxLastAt = now_ms;
+}
+
 static bool friendsEidSeenOrRecord(uint32_t eid) {
   if (eid == 0) return false;
   for (uint8_t i = 0; i < kFriendsMaxRxItems; ++i) {
@@ -164,6 +243,26 @@ constexpr uint32_t kFriendsRendezvousTimeoutMs = 60000;
 constexpr uint8_t  kMsgRendezvousReady         = 1;   // formerly kMsgMatch — repurposed
 uint32_t           g_friendsLocalReadyMs       = 0;
 uint32_t           g_friendsRemoteReadyMs      = 0;
+
+// Reach-back Ready in Sending state: when WE matched and transitioned
+// out of Rendezvous, the partner may still be stuck at "Waiting for
+// friend" because our 4-packet match-burst got drowned by RF collision
+// with their own simultaneous burst. The Sending state otherwise
+// re-broadcasts only Items and Done — but if the user hasn't tapped any
+// item yet and we haven't signalled Done, the radio falls completely
+// silent and the partner has zero chance to match. Periodically resend
+// Ready in Sending until we hear something content-bearing back from the
+// partner (an Item, or their Done) — at which point we know they have
+// also matched and the reach-back is no longer needed.
+// Re-broadcast cadences in the Sending state. Originally 100/250/300 ms
+// — but a CoreS3 (ESP32-S3) test logged tx=809 against rxCb=1 over 4 s:
+// the pet was firing ~200 packets/s and its own WiFi stack stopped
+// dispatching RX packets (own TX deafens the receive path on the S3).
+// Slowing the cadence ~5× cuts TX to ~12 packets/s — still robust enough
+// for ESP-NOW broadcast loss rates, but leaves the radio long enough in
+// RX between packets that the partner's burst can be decoded.
+constexpr uint32_t kFriendsReachBackGapMs       = 800;
+uint32_t           g_friendsLastReachBackMs     = 0;
 
 // ── Parent server ─────────────────────────────────────────────────────
 constexpr uint16_t kParentPort         = 80;
@@ -936,7 +1035,7 @@ static void onEspNowSend(const uint8_t* /*mac*/, esp_now_send_status_t status) {
 // eid: optional event-id for item-burst dedup. 0 = "no eid" (Ready/Done are
 // idempotent and need no dedup). Items set eid=millis() per tap and send
 // the burst (3x) with the same eid; receiver dedups against that.
-static void friendsSendPacket(uint8_t msgType, uint32_t eid = 0) {
+static void friendsSendPacket(uint8_t msgType, uint32_t eid) {   // default lives on the forward decl above
   uint8_t buf[kEspNowPacketLen] = {0};
   memcpy(buf, kEspNowProtoMagic, 4);
   buf[4]  = kEspNowProtoVersion;
@@ -952,7 +1051,13 @@ static void friendsSendPacket(uint8_t msgType, uint32_t eid = 0) {
   buf[14] = (uint8_t)(eid >> 16);
   buf[15] = (uint8_t)(eid >> 24);
 
-  esp_err_t r = esp_now_send(kEspNowBroadcastMac, buf, kEspNowPacketLen);
+  // Unicast to the partner once we've learned their MAC, otherwise
+  // broadcast (rendezvous discovery before any RX). Unicast is far more
+  // reliable than broadcast on the ESP32-S3: it has 802.11 ACK + retry,
+  // while broadcast is fire-and-forget and the S3 frequently drops it.
+  const uint8_t* dest = g_friendsHasRemoteMac ? g_friendsRemoteMac
+                                              : kEspNowBroadcastMac;
+  esp_err_t r = esp_now_send(dest, buf, kEspNowPacketLen);
   g_friendsTxCount++;
   Serial.printf("[friends] tx#%lu type=%u id=%02X%02X%02X%02X eid=%lu result=%d\n",
                 (unsigned long)g_friendsTxCount, msgType,
@@ -973,16 +1078,14 @@ bool openEspNowRadio(const char* logPrefix) {
   delay(50);
   esp_wifi_stop();
   delay(50);
-  WiFi.mode(WIFI_STA);
+  // Use AP+STA mode (without an actual softAP). Empirically the
+  // ESP32-S3's WiFi stack drops most ESP-NOW broadcast frames when in
+  // pure WIFI_STA without an AP association. WIFI_AP_STA gives the
+  // stack an AP MAC table to dispatch broadcasts against, even though
+  // we never start an actual softAP. (Earlier experiment with explicit
+  // softAP() *worsened* RX on the ESP32-S3 — left out.)
+  WiFi.mode(WIFI_AP_STA);
   delay(50);
-  // Hard-disable power save. WiFi.setSleep(false) silently returns false
-  // when the STA stack is in Arduino's internal "not started" state — then
-  // the PHY stays in the default WIFI_PS_MIN_MODEM, only listens in DTIM
-  // intervals, and misses short item bursts. Going directly through the
-  // ESP-IDF API bypasses that.
-  esp_err_t psRes = esp_wifi_set_ps(WIFI_PS_NONE);
-  Serial.printf("[%s] esp_wifi_set_ps(WIFI_PS_NONE)=%d\n",
-                logPrefix, (int)psRes);
   // TX power explicitly to the maximum (84 = 21 dBm). With asymmetric
   // reception it's important that both pets transmit as loudly as possible
   // so the partner with the weaker RX can hear anything at all.
@@ -992,14 +1095,20 @@ bool openEspNowRadio(const char* logPrefix) {
   Serial.printf("[%s] esp_wifi_set_max_tx_power(84)=%d → readback=%d\n",
                 logPrefix, (int)txpRes, (int)txpReadback);
   esp_wifi_set_promiscuous(false);
-  // Long-range mode: ESP32-proprietary PHY profile with ~12 dB better
-  // receive sensitivity (at the cost of data rate, ~512 kbps instead of
-  // 54 Mbps). With asymmetric RF reception between two pets this is the
-  // decisive lever — a weak receiver suddenly has enough margin to decode
-  // the partner's signal reliably. closeEspNowRadio reverts to BGN.
+  // Use standard 802.11 B/G/N. Earlier this code used WIFI_PROTOCOL_LR
+  // (Espressif's proprietary long-range mode) for the ~12 dB sensitivity
+  // bonus, but that turned out NOT to be reliably interoperable across
+  // ESP32 ↔ ESP32-S3 (CoreS3 / Muffin). Symptom: CoreS3 logs rxCb=0 for
+  // 60+ seconds while a Core2 partner sends 100+ Ready packets that never
+  // make it into the recv-cb. LR-only is exclusive (no fallback to BGN
+  // for the partner that doesn't decode LR). Two pets in the same room
+  // don't need the LR sensitivity bonus anyway — BGN at max TX power is
+  // plenty.
   esp_err_t protoRes =
-      esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR);
-  Serial.printf("[%s] esp_wifi_set_protocol(LR)=%d\n",
+      esp_wifi_set_protocol(WIFI_IF_STA,
+                            WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G |
+                            WIFI_PROTOCOL_11N);
+  Serial.printf("[%s] esp_wifi_set_protocol(BGN)=%d\n",
                 logPrefix, (int)protoRes);
   // Pin the radio onto our shared discovery channel.
   esp_err_t chanRes =
@@ -1010,14 +1119,26 @@ bool openEspNowRadio(const char* logPrefix) {
   Serial.printf(
     "[%s] esp_wifi_set_channel=%d → readback primary=%u second=%d\n",
     logPrefix, (int)chanRes, (unsigned)chanReadback, (int)chanSecond);
+  // Hard-disable power save AS THE LAST STEP. Symptom from a CoreS3
+  // (ESP32-S3) test: rxCb=2 right after Friends-Begin, then 0 new packets
+  // for 30 s while the partner sent 100+. Setting WIFI_PS_NONE *before*
+  // set_protocol(LR) / set_channel let the underlying stack revert PS to
+  // the WIFI_PS_MIN_MODEM default (it only listens in DTIM intervals,
+  // and broadcast-only ESP-NOW without an AP has no DTIM windows → radio
+  // is effectively deaf). Apply PS_NONE *after* the protocol+channel
+  // changes so it's the last-applied setting.
+  // WiFi.setSleep(false) silently returns false when the STA stack is in
+  // Arduino's internal "not started" state, so go directly through the
+  // ESP-IDF API.
+  esp_err_t psRes = esp_wifi_set_ps(WIFI_PS_NONE);
+  Serial.printf("[%s] esp_wifi_set_ps(WIFI_PS_NONE)=%d\n",
+                logPrefix, (int)psRes);
   return chanRes == ESP_OK && chanReadback == kEspNowChannel;
 }
 
 void closeEspNowRadio() {
-  // PHY profile back to standard B/G/N — otherwise the next WiFi AP
-  // connect (time sync, weather, parent server) can't talk to normal
-  // 802.11 routers. set_protocol requires an active STA stack, so do it
-  // before the disconnect.
+  // PHY profile back to standard B/G/N — set_protocol requires an active
+  // STA stack, so do it before the disconnect.
   esp_wifi_set_protocol(WIFI_IF_STA,
       WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
   WiFi.disconnect(true, true);
@@ -1057,6 +1178,14 @@ void friendsBegin(uint8_t myAnimal, uint8_t myLanguage) {
     Serial.printf("[friends] esp_now_add_peer failed: %d\n", (int)addRes);
   }
 
+  // Re-apply WIFI_PS_NONE one more time: esp_now_init / add_peer can also
+  // touch the WiFi state and quietly reactivate power-save on the
+  // ESP32-S3. Belt-and-suspenders — without this the CoreS3's RX falls
+  // silent after the first 1-2 packets.
+  esp_err_t psRes2 = esp_wifi_set_ps(WIFI_PS_NONE);
+  Serial.printf("[friends] esp_wifi_set_ps(WIFI_PS_NONE) re-apply=%d\n",
+                (int)psRes2);
+
   g_friendsEspNowReady = true;
   g_friendsLastSendAt  = 0;
   g_rxHead = g_rxTail = 0;
@@ -1071,6 +1200,10 @@ void friendsBegin(uint8_t myAnimal, uint8_t myLanguage) {
   g_friendsTxOutboxCount = 0;
   g_friendsTxOutboxRotIdx = 0;
   g_friendsLastItemRebroadcastMs = 0;
+  g_friendsLastReachBackMs = 0;
+  memset(g_friendsRemoteMac, 0, sizeof(g_friendsRemoteMac));
+  g_friendsHasRemoteMac = false;
+  pendingTxClear();
   Serial.printf("[friends] ESP-NOW ready, channel=%u — entering Rendezvous\n",
                 (unsigned)kEspNowChannel);
   // Rendezvous phase: both pets must tap the "Meet up" button.
@@ -1102,6 +1235,10 @@ void friendsEnd() {
   g_friendsTxOutboxCount = 0;
   g_friendsTxOutboxRotIdx = 0;
   g_friendsLastItemRebroadcastMs = 0;
+  g_friendsLastReachBackMs = 0;
+  memset(g_friendsRemoteMac, 0, sizeof(g_friendsRemoteMac));
+  g_friendsHasRemoteMac = false;
+  pendingTxClear();
   friendsTransition(FriendsState::Idle);
   // Resume the Pip-link listener if it was running. Phase 1: no-op.
   pip_link::resume();
@@ -1125,17 +1262,18 @@ void friendsSendItem(uint8_t kind) {
   // false-dedup and lose the second one.
   uint32_t eid = esp_random();
   if (eid == 0) eid = 1;     // 0 is the sentinel for "no eid" (Ready/Done)
-  for (int i = 0; i < 3; ++i) {
-    friendsSendPacket(kind, eid);
-    if (i < 2) delay(20);
-  }
+  // 1 packet on the tap. The outbox-driven re-broadcast (every ~500 ms
+  // with jitter) handles redundancy. A bigger initial burst here would
+  // reopen the self-deafening RX issue on the ESP32-S3: the longer the
+  // local TX window, the more partner packets are lost during it.
+  burstSend(kind, eid, 1);
   // Outbox entry for periodic re-broadcast in the sending tick.
   if (g_friendsTxOutboxCount < kFriendsMaxSends) {
     g_friendsTxOutbox[g_friendsTxOutboxCount].kind = kind;
     g_friendsTxOutbox[g_friendsTxOutboxCount].eid  = eid;
     g_friendsTxOutboxCount++;
   }
-  Serial.printf("[friends] item kind=%u eid=%lu sent (burst x3, outbox=%u)\n",
+  Serial.printf("[friends] item kind=%u eid=%lu sent (1+rebroadcast, outbox=%u)\n",
                 (unsigned)kind, (unsigned long)eid,
                 (unsigned)g_friendsTxOutboxCount);
 }
@@ -1145,12 +1283,9 @@ void friendsSignalDone() {
   if (g_friendsLocalDone) return;   // already sent
   g_friendsLocalDone   = true;
   g_friendsLocalDoneAt = millis();
-  // Burst of 4 done packets so it gets through even with RF interference.
-  // Periodic re-send afterwards in the sending tick.
-  for (int i = 0; i < 4; ++i) {
-    friendsSendPacket(kMsgSessionDone);
-    delay(20);
-  }
+  // 1 packet only — the periodic re-send (every ~700 ms with jitter)
+  // in the sending tick handles redundancy without burst-deafening.
+  burstSend(kMsgSessionDone, 0, 1);
   Serial.printf("[friends] local done @%lu (5 sends complete)\n",
                 (unsigned long)g_friendsLocalDoneAt);
 }
@@ -1160,13 +1295,13 @@ bool friendsRemoteDone() { return g_friendsRemoteDone; }
 void friendsTriggerRendezvous() {
   if (g_friendsState != FriendsState::Rendezvous) return;
   g_friendsLocalReadyMs = millis();
-  // Initial burst: 3 packets in quick succession, then the periodic
-  // re-broadcast in friendsTick takes over. A single packet isn't enough
-  // for ESP-NOW broadcast — no ACKs, no retries.
-  for (int i = 0; i < 3; ++i) {
-    friendsSendPacket(kMsgRendezvousReady);
-    delay(20);
-  }
+  // Initial: 1 packet only. Was a 3-packet burst, but two pets tapping
+  // at the same time would burst into each other and lose packets to
+  // RF collision. On the ESP32-S3 the burst's TX window (now 200–300 ms
+  // with kPendingTxGapMs=100) also deafens the local RX path long
+  // enough to miss the partner's burst entirely. The periodic
+  // re-broadcast with jitter below provides the redundancy instead.
+  burstSend(kMsgRendezvousReady, 0, 1);
   g_friendsLastSendAt = millis();
   Serial.printf("[friends] local rendezvous ready @%lu\n",
                 (unsigned long)g_friendsLocalReadyMs);
@@ -1217,6 +1352,12 @@ static bool friendsTryDecode(const uint8_t* data, size_t len, uint8_t* outType,
 void friendsTick(uint32_t now_ms) {
   if (g_friendsState == FriendsState::Idle) return;
 
+  // Drain the non-blocking burst queue once per tick — emits at most
+  // one queued packet per ~20 ms (kPendingTxGapMs). Runs across both
+  // Rendezvous and Sending so a match-burst enqueued during the
+  // Rendezvous→Sending transition keeps emptying.
+  pendingTxDrain(now_ms);
+
   switch (g_friendsState) {
     case FriendsState::Rendezvous: {
       // Drain the RX queue. We care about Ready packets (match trigger)
@@ -1232,6 +1373,25 @@ void friendsTick(uint32_t now_ms) {
         uint32_t eid = 0;
         if (!friendsTryDecode(item.data, item.len, &type, id, &animal, &eid)) continue;
         if (memcmp(id, g_friendsMyId, 4) == 0) continue;     // own
+        // Capture the partner's MAC once and register them as an
+        // explicit unicast peer. From here on friendsSendPacket() will
+        // address them directly instead of broadcasting — much more
+        // reliable on the ESP32-S3 (CoreS3), whose stack frequently
+        // drops broadcast frames in disconnected-STA mode while unicast
+        // frames have ACK + retry at the 802.11 layer.
+        if (!g_friendsHasRemoteMac) {
+          memcpy(g_friendsRemoteMac, item.mac, 6);
+          g_friendsHasRemoteMac = true;
+          Serial.printf("[friends] remote mac locked: %02X:%02X:%02X:%02X:%02X:%02X\n",
+                        item.mac[0], item.mac[1], item.mac[2],
+                        item.mac[3], item.mac[4], item.mac[5]);
+          esp_now_peer_info_t up = {};
+          memcpy(up.peer_addr, item.mac, 6);
+          up.channel = kEspNowChannel;
+          up.encrypt = false;
+          esp_err_t addRes = esp_now_add_peer(&up);
+          Serial.printf("[friends] add_peer(unicast)=%d\n", (int)addRes);
+        }
         if (type == kMsgRendezvousReady) {
           g_friendsRemoteReadyMs = now_ms;
           g_friendsPeerAnimal    = animal;
@@ -1265,12 +1425,12 @@ void friendsTick(uint32_t now_ms) {
       }
       // Re-broadcast: ESP-NOW broadcasts are best-effort and can be lost
       // in one direction. While our local Ready is set, re-send it
-      // ~every 400 ms for the rest of the rendezvous phase — that gives
-      // the partner many chances to hear it. Otherwise the symptom is:
-      // one pet matches (sees the other's first Ready), the other gets
-      // stuck until the 60 s timeout.
+      // every 400-700 ms for the rest of the rendezvous phase. The 0-300 ms
+      // jitter is critical: without it two pets that tapped at the same
+      // time stay phase-locked and re-collide on every single re-broadcast.
+      // With jitter their cycles drift apart within a couple of beats.
       if (g_friendsLocalReadyMs != 0 &&
-          (int32_t)(now_ms - g_friendsLastSendAt) >= 400) {
+          (int32_t)(now_ms - g_friendsLastSendAt) >= (int32_t)(400 + (esp_random() % 300))) {
         g_friendsLastSendAt = now_ms;
         friendsSendPacket(kMsgRendezvousReady);
       }
@@ -1294,15 +1454,12 @@ void friendsTick(uint32_t now_ms) {
       bool remoteReady = g_friendsRemoteReadyMs != 0;
       if (localReady && remoteReady) {
         Serial.println(F("[friends] rendezvous matched — entering Sending"));
-        // Match burst: 4 more Ready packets in quick succession so the
-        // partner — whose last Ready to us could have been dropped by
-        // RF loss — is guaranteed to hear at least one. Otherwise an
-        // asymmetry: we match, stop sending, the partner hears nothing
-        // more and waits the full 60 s into the timeout.
-        for (int i = 0; i < 4; ++i) {
-          friendsSendPacket(kMsgRendezvousReady);
-          delay(20);   // ESP-NOW needs a few ms between bursts
-        }
+        // Match burst: 1 packet only. Was 4 — but the 400 ms TX window
+        // collides with the partner's own bursts and worsens the very
+        // problem this used to fix. The Sending state's reach-back
+        // re-broadcast (every ~800 ms with jitter) covers the case
+        // where this single match-confirm gets lost.
+        burstSend(kMsgRendezvousReady, 0, 1);
         friendsTransition(FriendsState::Sending);
         break;
       }
@@ -1353,6 +1510,25 @@ void friendsTick(uint32_t now_ms) {
           continue;
         }
         if (memcmp(id, g_friendsMyId, 4) == 0) continue;     // own
+        // Capture the partner's MAC once and register them as an
+        // explicit unicast peer. From here on friendsSendPacket() will
+        // address them directly instead of broadcasting — much more
+        // reliable on the ESP32-S3 (CoreS3), whose stack frequently
+        // drops broadcast frames in disconnected-STA mode while unicast
+        // frames have ACK + retry at the 802.11 layer.
+        if (!g_friendsHasRemoteMac) {
+          memcpy(g_friendsRemoteMac, item.mac, 6);
+          g_friendsHasRemoteMac = true;
+          Serial.printf("[friends] remote mac locked: %02X:%02X:%02X:%02X:%02X:%02X\n",
+                        item.mac[0], item.mac[1], item.mac[2],
+                        item.mac[3], item.mac[4], item.mac[5]);
+          esp_now_peer_info_t up = {};
+          memcpy(up.peer_addr, item.mac, 6);
+          up.channel = kEspNowChannel;
+          up.encrypt = false;
+          esp_err_t addRes = esp_now_add_peer(&up);
+          Serial.printf("[friends] add_peer(unicast)=%d\n", (int)addRes);
+        }
         if (type == kMsgSessionDone) {
           if (!g_friendsRemoteDone) {
             Serial.println(F("[friends]   -> remote done"));
@@ -1379,29 +1555,31 @@ void friendsTick(uint32_t now_ms) {
           type, (unsigned long)eid, animal,
           g_friendsRxItemCount, kFriendsMaxRxItems);
       }
-      // Done re-broadcast: as long as our local done flag is set,
-      // resend the Done packet every ~250 ms — the partner may need
-      // several attempts before one gets through. Keeps running even
-      // after we've seen the partner's Done, because the main-loop
-      // bothDone check now holds the Sending state open for a trailing
-      // window so the *partner* can still catch our Done. 250 ms gives
-      // ~8 chances within a 2 s trailing window.
+      // Re-broadcast paths in Sending state (Reach-back / Done / Items).
+      // All gated by jittered intervals to break lockstep with the
+      // partner. We previously experimented with hard half-duplex
+      // turn-taking based on slot epochs, but that made the ESP32-S3
+      // RX *worse* and dropped match success — so it's been removed.
+      // What remains: low TX cadence (500-1000 ms) + jitter is enough
+      // to keep both pets reachable in practice.
+
+      // Reach-back Ready: keep sending Ready until we've heard anything
+      // content-bearing from the partner.
+      if (g_friendsRxItemCount == 0 && !g_friendsRemoteDone &&
+          (int32_t)(now_ms - g_friendsLastReachBackMs) >=
+              (int32_t)(kFriendsReachBackGapMs + (esp_random() % 300))) {
+        g_friendsLastReachBackMs = now_ms;
+        friendsSendPacket(kMsgRendezvousReady);
+      }
+      // Done re-broadcast: as long as our local done flag is set.
       if (g_friendsLocalDone &&
-          (int32_t)(now_ms - g_friendsLastSendAt) >= 250) {
+          (int32_t)(now_ms - g_friendsLastSendAt) >= (int32_t)(700 + (esp_random() % 300))) {
         g_friendsLastSendAt = now_ms;
         friendsSendPacket(kMsgSessionDone);
       }
-      // Item re-broadcast: with asymmetric RF reception the partner
-      // pet hears the every-500-ms Done but not the one-off 60 ms item
-      // bursts. Round-robin through our outbox every 100 ms — and keep
-      // going for the entire Sending phase, including the bothDone
-      // trailing window in main.cpp. We used to stop the moment the
-      // partner signalled Done ("they're done sending, stop bothering
-      // them"), but that misread Done as "done receiving" and lost
-      // late items in the asymmetric-link case. The state-machine exit
-      // out of Sending is the correct upper bound.
+      // Item re-broadcast: round-robin through our outbox.
       if (g_friendsTxOutboxCount > 0 &&
-          (int32_t)(now_ms - g_friendsLastItemRebroadcastMs) >= 100) {
+          (int32_t)(now_ms - g_friendsLastItemRebroadcastMs) >= (int32_t)(500 + (esp_random() % 200))) {
         g_friendsLastItemRebroadcastMs = now_ms;
         const FriendsTxOutboxItem& it =
             g_friendsTxOutbox[g_friendsTxOutboxRotIdx];

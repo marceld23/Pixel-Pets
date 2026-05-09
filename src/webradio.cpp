@@ -10,6 +10,7 @@
 
 #include "net.h"
 #include "pip_link.h"
+#include "sounds/sounds.h"
 
 #if TARGET_HAS_LLM
 #include "voice_pipeline.h"
@@ -24,8 +25,10 @@ namespace {
 // WDR Maus: HTTP variant as primary — the HTTPS variant via icecastssl
 // has reproducible TLS handshake problems in the ESP32-audioI2S library
 // (socket closes before setSocketOption → errno 9 EBADF). HTTP works.
-// 56 kbps variant: lower bitrate is friendlier on flaky guest WiFi —
-// the 128 kbps stream reproducibly cut after ~30 s on FRITZ!Box guest.
+// 56 kbps variant: the URL the server *currently* redirects to a
+// 128 kbps stream on rndfnk.com, but we keep the canonical Maus URL —
+// the 302 hop is acceptable, the stutter we previously chased was
+// caused by main-loop blocking, not bandwidth.
 constexpr const char* kUrlDe =
     "http://wdr-diemaus-live.icecast.wdr.de/wdr/diemaus/live/mp3/56/stream.mp3";
 constexpr const char* kUrlEn =
@@ -38,6 +41,16 @@ Audio*    g_audio    = nullptr;
 State     g_state    = State::Off;
 uint8_t   g_volume0_255 = 200;
 uint8_t   g_lang     = 0;
+
+// Dedicated audio-decode task pinned to core 1. The schreibfaul1
+// maintainer recommends this pattern (examples/separate_audiotask) for
+// stutter-free streaming on ESP32: the main loop is full of TFT
+// redraws, touch sampling, pet/friends ticks etc. — every long iteration
+// starves audio.loop() and produces audible dropouts. A pinned task
+// with vTaskDelay(1) yields cleanly to other tasks while keeping the
+// MP3 decoder fed at near-100% duty cycle.
+TaskHandle_t      g_audioTask        = nullptr;
+volatile bool     g_audioTaskRunning = false;
 
 // Reconnect logic: on stream loss we retry ≤3 times with a pause
 // between attempts. Then Error state and the renderer can show it.
@@ -115,6 +128,53 @@ void setSpeakerAmpPower(bool on) {
 #endif
 }
 
+// Audio task body — runs forever (until g_audioTaskRunning is cleared)
+// and just keeps feeding the decoder. The library's loop() reads from
+// the input buffer (PSRAM ringbuffer) and writes to the I2S DMA. With
+// vTaskDelay(1) we yield 1 RTOS tick (= 1 ms at the default 1 kHz tick
+// rate), giving the WiFi/lwIP task on core 0 room to fill the buffer.
+static void audioTaskFn(void* /*arg*/) {
+    while (g_audioTaskRunning) {
+        if (g_audio) {
+            g_audio->loop();
+        }
+        vTaskDelay(1);
+    }
+    g_audioTask = nullptr;
+    vTaskDelete(nullptr);
+}
+
+static void startAudioTask() {
+    if (g_audioTask != nullptr) return;
+    g_audioTaskRunning = true;
+    // Stack 8000 words = 32 KB — the maintainer's example uses 5000, we
+    // give extra headroom for safety (MP3 decoder + reconnect path can
+    // use ~6 KB peak). Priority 5 keeps the task above the Arduino loop
+    // (default priority 1) so a long redraw / pet-tick can't starve
+    // audio. portPRIVILEGE_BIT is the default for tasks that don't need
+    // unprivileged-mode separation.
+    BaseType_t r = xTaskCreatePinnedToCore(audioTaskFn, "webradio_audio",
+                                           8000, nullptr,
+                                           5 | portPRIVILEGE_BIT,
+                                           &g_audioTask, /*core*/ 1);
+    Serial.printf("[webradio] audio task created on core 1: %d\n", (int)r);
+}
+
+static void stopAudioTask() {
+    if (g_audioTask == nullptr) return;
+    g_audioTaskRunning = false;
+    // Wait briefly for the task to exit on its own (the loop polls
+    // the running flag at most every ~1 ms). If it doesn't exit within
+    // ~200 ms something is very wrong and we just leak the handle.
+    for (int i = 0; i < 20 && g_audioTask != nullptr; ++i) {
+        delay(10);
+    }
+    if (g_audioTask != nullptr) {
+        Serial.println(F("[webradio] audio task did not exit cleanly"));
+        g_audioTask = nullptr;
+    }
+}
+
 // Switch I2S peripheral: release M5.Speaker, audio lib takes over.
 // Only one can hold the I2S bus at a time.
 void claimI2sForAudio() {
@@ -131,9 +191,16 @@ void claimI2sForAudio() {
     // Bring amp back up — otherwise the audio lib plays into a dead
     // I2S bus.
     setSpeakerAmpPower(true);
+    // Spin up the dedicated audio decoder task. From here on
+    // audio.loop() is *not* called from the main loop — the task is
+    // the sole owner.
+    startAudioTask();
 }
 
 void releaseI2sFromAudio() {
+    // Stop the audio task before touching g_audio.stopSong(), otherwise
+    // we'd race with the task's audio.loop() call.
+    stopAudioTask();
     if (g_audio) {
         g_audio->stopSong();
     }
@@ -204,6 +271,12 @@ void start(uint8_t lang) {
     // no-op skeleton.
     pip_link::pause();
 
+    // Suppress all pet sound effects while the radio is playing.
+    // playSound() goes through M5.Speaker which fights with the audio
+    // library for the I2S bus — overlapping starts produce audible
+    // crackling. Restored in stop().
+    setSoundEnabled(false);
+
     // Take a WiFi reference — if currently off, the function in
     // net.cpp brings up the async connect.
     wifiKeepAlive(kKeepAliveReason);
@@ -220,6 +293,7 @@ void stop() {
     voice::resume();
 #endif
     pip_link::resume();
+    setSoundEnabled(true);
     g_state = State::Off;
     g_reconnectsTried = 0;
 }
@@ -236,6 +310,14 @@ void tick(uint32_t now_ms) {
             }
             return;
         }
+        // Disable WiFi modem-sleep. The Arduino default leaves
+        // power-save on, so RX is gated by the AP's DTIM beacon (~100
+        // ms intervals). For continuous MP3 streaming that's far too
+        // bursty — packets queue up at the AP, lwIP RX buffer overflows,
+        // and the decoder underruns. setSleep(false) keeps the radio
+        // listening at all times; battery cost is acceptable while
+        // streaming actively.
+        WiFi.setSleep(false);
         // WiFi is up — claim I2S every time. claimI2sForAudio() is
         // idempotent (only the Audio object itself is constructed once),
         // and we *must* call it on every start because stop() runs
@@ -253,7 +335,10 @@ void tick(uint32_t now_ms) {
     }
 
     if (g_state == State::Playing) {
-        if (g_audio) g_audio->loop();
+        // audio.loop() is now driven by the dedicated audio task on
+        // core 1 (started in claimI2sForAudio). Don't call it from
+        // here — calling loop() from two places is a known cause of
+        // stutter (issue #253 of the schreibfaul1 lib).
         // Stream loss → reconnect attempt after kReconnectGapMs.
         if (g_audio && !g_audio->isRunning()) {
             if (now_ms - g_lastReconnectMs >= kReconnectGapMs) {

@@ -799,6 +799,12 @@ void drawMediaSelectScreen(M5Canvas& canvas, const MediaSelectView& v);
 // immediate feedback.
 void drawRadioConnectingOverlay(M5Canvas& canvas);
 
+// "Need WiFi" overlay — shown briefly when the user taps the Radio
+// media tile but no WiFi credentials have been set up yet (or all
+// stored APs are out of range). Same panel style as the connecting
+// overlay so the look is consistent.
+void drawNeedsWifiOverlay(M5Canvas& canvas);
+
 // Boot sync progress: full-screen status while WiFi/NTP/World run in the
 // background. stage matches the SyncStage enum in main.cpp:
 //   0 Idle   → empty frame (should practically never be called)

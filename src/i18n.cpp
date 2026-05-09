@@ -146,7 +146,7 @@ const StringEntry kStrings[] = {
   /* MediaRadio        */ { "Radio",          "Radio" },
   /* RadioConnecting   */ { "Verbindet...",   "Connecting..." },
   /* RadioPlaying      */ { "Radio",          "Radio" },
-  /* RadioErrorWifi    */ { "Kein WLAN",      "No WiFi" },
+  /* RadioErrorWifi    */ { "Brauche WLAN",   "Need WiFi" },
   /* RadioErrorStream  */ { "Stream offline", "Stream offline" },
 
   /* HelpTitleRadio    */ { "Radio hoeren",   "Listening to radio" },

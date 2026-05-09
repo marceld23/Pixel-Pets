@@ -7524,6 +7524,38 @@ void drawRadioConnectingOverlay(M5Canvas& c) {
   c.setTextDatum(top_left);
 }
 
+void drawNeedsWifiOverlay(M5Canvas& c) {
+  // Same panel style as drawRadioConnectingOverlay for consistency,
+  // but with a "no WiFi" antenna icon (slash through the waves) and
+  // the warning-toned background.
+  for (int y = 0; y < 240; y += 2) {
+    c.drawFastHLine(0, y, 320, c.color565(0, 0, 0));
+  }
+  uint16_t bg     = c.color565(255, 220, 200);   // warm warning tint
+  uint16_t border = c.color565(180,  60,  40);
+  uint16_t accent = c.color565(220,  60,  40);
+  uint16_t fg     = c.color565( 90,  35,  25);
+  c.fillRoundRect(50, 90, 220, 70, 12, bg);
+  c.drawRoundRect(50, 90, 220, 70, 12, border);
+  // Antenna with slash — same base shape as connecting, then a red
+  // diagonal line through it.
+  int ix = 80, iy = 125;
+  c.fillCircle(ix, iy, 5, fg);
+  for (int r = 10; r <= 18; r += 4) {
+    c.drawCircle(ix, iy, r, fg);
+    c.fillRect(ix - r - 1, iy + 1, 2 * r + 2, r + 2, bg);
+    c.fillRect(ix - r - 1, iy - r - 1, r + 1, 2 * r + 2, bg);
+  }
+  // Slash: 2-px-wide diagonal line through the antenna icon.
+  c.drawLine(ix - 14, iy + 14, ix + 14, iy - 14, accent);
+  c.drawLine(ix - 14, iy + 13, ix + 14, iy - 15, accent);
+  c.setTextDatum(middle_center);
+  c.setTextSize(2);
+  c.setTextColor(fg);
+  c.drawString(tr(Str::RadioErrorWifi), 180, iy);
+  c.setTextDatum(top_left);
+}
+
 void drawMediaSelectScreen(M5Canvas& c, const MediaSelectView& v) {
   c.fillSprite(c.color565(25, 25, 38));
 

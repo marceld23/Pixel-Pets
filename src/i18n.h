@@ -153,7 +153,7 @@ enum class Str : uint16_t {
   MediaRadio,                   // "Radio" / "Radio" — web radio entry
   RadioConnecting,              // "Verbindet..." / "Connecting..."
   RadioPlaying,                 // "Radio" / "Radio" — status during playback
-  RadioErrorWifi,               // "Kein WLAN" / "No WiFi"
+  RadioErrorWifi,               // "Brauche WLAN" / "Need WiFi"
   RadioErrorStream,             // "Stream offline" / "Stream offline"
 
   // Help — web radio page

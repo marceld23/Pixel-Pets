@@ -2593,6 +2593,12 @@ static void handleTouchSettings(int tx, int ty, bool pressed, bool wasPressed,
     if (abs(newVolume - g_volume) >= 2) {
       g_volume = (uint8_t)newVolume;
       M5.Speaker.setVolume(g_volume);
+#if TARGET_HAS_WIFI
+      // Live-update the webradio volume too — otherwise the slider only
+      // affects pet sounds, and the streaming MP3 stays at whatever
+      // value was active when start() was called.
+      webradio::setVolume(g_volume);
+#endif
     }
   }
   (void)now;
@@ -2612,6 +2618,21 @@ constexpr Rect kBtnSleepRect  = { 210, 216, 100, 24 };
 
 static void handleTouchPet(int tx, int ty, bool pressed, bool wasPressed,
                            uint32_t now) {
+  // ── Radio-listen lock ─────────────────────────────────────────────────
+  // While webradio is playing, the pet is "in listen mode" — every
+  // interaction is suppressed except a tap on the Media button (which
+  // still toggles the radio off). Otherwise tickling/greeting/feeding
+  // etc. would yank the pet into a sound-effect animation and the user
+  // experience is "the music stops every time I touch the pet".
+  // Stroking (continuous `pressed` without `wasPressed`) is also gated.
+  if (g_pet.mediaActive == Media::Radio) {
+    if (wasPressed && insideRect(tx, ty, kMediaButtonRect)) {
+      // Fall through to the existing media-toggle handling further down.
+    } else {
+      return;
+    }
+  }
+
   if (wasPressed) {
     // Touch buttons at the bottom of the display. On CoreS3 they replace
     // the missing A/B/C hardware buttons; on Core2 they supplement them.
@@ -2933,6 +2954,20 @@ static void handleTouchMediaSelect(int tx, int ty, bool pressed, bool wasPressed
       }
 #if TARGET_HAS_WIFI
       if (types[i] == Media::Radio) {
+        // No WiFi credentials stored → can't start radio. Show a brief
+        // "Brauche WLAN" overlay and bounce back to the chooser, the
+        // user can then go to Settings → WiFi-Setup. We only check
+        // creds existence here, not actual connectivity — that takes
+        // 5–10 s and would feel like a freeze. If creds are there but
+        // the AP is unreachable, the existing connect-timeout path
+        // surfaces an Error face after ~10 s.
+        if (!wifiHasCreds()) {
+          drawNeedsWifiOverlay(g_canvas);
+          g_canvas.pushSprite(0, 0);
+          M5.delay(1800);
+          g_pet.mediaSelectMode = false;
+          return;
+        }
         // Start web radio — takes over I2S, pauses the voice pipeline,
         // grabs the WiFi keep-alive slot. End any other media mode that
         // may be active (movies / games / social etc.).
@@ -2949,6 +2984,12 @@ static void handleTouchMediaSelect(int tx, int ty, bool pressed, bool wasPressed
         // update the user would just see a frozen screen after the tap.
         drawRadioConnectingOverlay(g_canvas);
         g_canvas.pushSprite(0, 0);
+        // Push the user's current volume slider into the audio library
+        // before starting the stream. Otherwise the radio uses the
+        // hardcoded webradio default (200/255 ≈ 80 %) and the settings
+        // slider has no effect — only restored on the next setVolume()
+        // call.
+        webradio::setVolume(g_volume);
         webradio::start((uint8_t)g_pet.persisted.language);
         return;
       }
@@ -5257,6 +5298,7 @@ static void applyVoiceTag(const String& tag) {
             g_pet.lastMediaSoundMs     = 0;
             flashFace(Face::Excited, 1200, now);
 #if TARGET_HAS_WIFI
+            webradio::setVolume(g_volume);
             webradio::start((uint8_t)g_pet.persisted.language);
 #endif
         } else {
@@ -6076,6 +6118,15 @@ void loop() {
     // handleTouchPet); Hard-A/B/C → Greet/Feed/Sleep, Touch-Strip →
     // Greet/Tickle/Sleep. drawButtonHints zeichnet die Glyphen, die auf
     // Core2 sowohl Hardware-Beschriftung als auch Touch-Affordance sind.
+    // While webradio plays, the pet is "in listen mode" — hard-buttons
+    // are blocked just like touch (see handleTouchPet for the same lock).
+    // We drain the click latches so they don't fire when the radio gets
+    // toggled off via the Media touch button.
+    if (g_pet.mediaActive == Media::Radio) {
+      (void)M5.BtnA.wasClicked();
+      (void)M5.BtnB.wasClicked();
+      (void)M5.BtnC.wasClicked();
+    } else {
     if (M5.BtnA.wasClicked()) {
       g_pet.forceSleep = false;
       g_motion.lastInteractionMs = now;
@@ -6097,6 +6148,7 @@ void loop() {
       g_pet.forceSleep = true;
       playSound(Sound::Yawn);
     }
+    }   // end of !mediaActive==Radio else-block
 #endif
   }
 
@@ -6354,7 +6406,12 @@ void loop() {
     // during this window now), every outbox item gets ~30 extra
     // re-send chances on top of the in-session retries before the
     // session actually closes.
-    constexpr uint32_t kFriendsDoneTrailingMs = 3000;
+    // Bumped from 3000 ms when re-broadcast cadences were slowed (Item
+    // 100→500 ms, Done 250→700 ms) to mitigate self-deafening TX on the
+    // ESP32-S3. With slower cadences each outbox item only gets 5–10
+    // re-send chances per second, so the trailing window needs more
+    // headroom for late items to still squeeze through.
+    constexpr uint32_t kFriendsDoneTrailingMs = 6000;
     if (bothDone && g_pet.friendsBothDoneAtMs == 0) {
       g_pet.friendsBothDoneAtMs = now;
       Serial.printf("[friends] bothDone reached @%lu — trailing %lu ms\n",
@@ -6683,6 +6740,11 @@ void loop() {
     g_pet.sportWorkoutMode || g_pet.friendsMode ||
     g_pet.listenMode || g_pet.mediaActive != Media::None;
   bool displayActive = (g_displayPowerMode != 2);
-  uint32_t loopDelayMs = (animatingNow && displayActive) ? 1u : 100u;
+  // Webradio MUST always run on the fast loop, regardless of display
+  // sleep. With the slow 100 ms cadence the audio decode task on core 1
+  // still gets CPU, but pre-task code paths that call audio.loop() from
+  // the main loop (legacy / fallback) would underrun. Cheap insurance.
+  bool audioActive = (g_pet.mediaActive != Media::None);
+  uint32_t loopDelayMs = (audioActive || (animatingNow && displayActive)) ? 1u : 100u;
   M5.delay(loopDelayMs);
 }
