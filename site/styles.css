@@ -247,6 +247,28 @@ pre code { background: none; padding: 0; color: inherit; }
   border: 0;
 }
 
+/* Feature-reel — vertical YouTube Short, 9:16 aspect, narrower max-width
+   so it doesn't dwarf the 16:9 deep-dive embed below. */
+.feature-reel-frame {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  margin: 24px auto 0;
+  aspect-ratio: 9 / 16;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  background: #000;
+}
+
+.feature-reel-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 /* ── Section scaffolding ────────────────────────────────────────────────── */
 
 .section {

@@ -43,6 +43,15 @@ A family of virtual pets on M5Stack hardware. **Three pet variants** — **Muffi
   <em>10 seconds with a Goo-Goo on the desk — click the cover to watch (1.5 MB MP4). German-captioned variant at <a href="assets/video/demo-de.mp4">demo-de.mp4</a>.</em>
 </p>
 
+## ⚡ 2-minute feature reel
+
+<p align="center">
+  <a href="https://www.youtube.com/shorts/jGS-yNJveYc">
+    <img src="https://img.youtube.com/vi/jGS-yNJveYc/maxresdefault.jpg" alt="Pixel Pets feature reel (2 minutes, click to watch on YouTube)" width="240">
+  </a><br>
+  <em>2 minutes in action — voice control on Muffin, gift exchange between two pets via ESP-NOW Friends mode, and a Pip wrist-flick treat throw. Click to watch on YouTube.</em>
+</p>
+
 ## 🎥 Project Deep-Dive
 
 <p align="center">
