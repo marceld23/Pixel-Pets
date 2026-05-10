@@ -225,7 +225,7 @@ enum class Str : uint16_t {
   HelpTitleGestures,          // Finger gestures (circle, spread)
   HelpTitleWarming,           // Hand-warming
   HelpTitleHopChain,          // Rapid tapping → pet hops N times
-  HelpTitleSinging,           // Upright + L/R tilt → pet sings
+  HelpTitleSinging,           // Heave-up + L/R tilt → pet sings
   HelpTitleMotion,
   HelpTitleRock,
   HelpTitleStanding,
@@ -254,7 +254,7 @@ enum class Str : uint16_t {
   HelpPWL1, HelpPWL2, HelpPWL3, HelpPWL4, HelpPWL5,
   // Page 7: Make it hop (tap multiple times)
   HelpPHL1, HelpPHL2, HelpPHL3, HelpPHL4, HelpPHL5,
-  // Page 8: Make it sing (upright + tilt left/right → singing + applause)
+  // Page 8: Make it sing (heave-up + tilt left/right → singing + applause)
   HelpPSL1, HelpPSL2, HelpPSL3, HelpPSL4, HelpPSL5,
   // Page 9: Motion
   HelpP5L1, HelpP5L2, HelpP5L3, HelpP5L4,

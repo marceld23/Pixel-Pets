@@ -281,8 +281,8 @@ const StringEntry kStrings[] = {
   /* HelpPHL4 */ { "wie du getippt hast.", "times as you tapped." },
   /* HelpPHL5 */ { "(3 bis 10 Mal)",       "(3 to 10 times)" },
 
-  // Page 8 — Singing (upright + L/R tilt → 8 s sing → 5 s applause window)
-  /* HelpPSL1 */ { "Aufrecht stellen,",    "Stand it upright," },
+  // Page 8 — Singing (heave-up from low + L/R tilt → 8 s sing → 5 s applause window)
+  /* HelpPSL1 */ { "Hochheben,",           "Lift it up," },
   /* HelpPSL2 */ { "links + rechts kippen:","tilt left + right:" },
   /* HelpPSL3 */ { "Pet singt!",           "Pet sings!" },
   /* HelpPSL4 */ { "Klatsche danach",      "Clap after that" },

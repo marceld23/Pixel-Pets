@@ -57,20 +57,25 @@ static volatile bool g_voiceSetupOk   = false;
 // ─── Tuning ──────────────────────────────────────────────────────────────────
 
 // Shake = positive "play" gesture now, so thresholds are friendly.
-constexpr float    SHAKE_PEAK_G          = 1.0f;
+// 1.0 g was reproducibly hard to reach for younger users — dropped to
+// 0.7 g so a confident wrist-flick from a kid actually triggers play.
+constexpr float    SHAKE_PEAK_G          = 0.7f;
 constexpr uint32_t SHAKE_WINDOW_MS       = 700;
 constexpr uint8_t  SHAKE_REQUIRED_PEAKS  = 2;
 constexpr uint32_t SHAKE_COOLDOWN_MS     = 1500;
 
-// Vertical (up-down) shake → rain shower. The dominance ratio is strict
-// (vertical must exceed horizontal) so brief vertical bumps inside a
-// side-to-side shake don't count — only motion the user clearly intended
-// as up-down qualifies. Long cooldown stops accidental re-triggers.
-constexpr float    VSHAKE_PEAK_G         = 1.0f;
-constexpr float    VSHAKE_LOW_HYS        = 0.5f;
-constexpr float    VSHAKE_DOMINANCE      = 1.0f;     // vAbs > horizMag
+// Vertical (up-down) shake → rain shower. Same magnitude relax as the
+// generic shake (1.0 → 0.7 g) plus a softer dominance ratio (1.0 → 0.6,
+// i.e. vertical only needs to be 60 % of horizontal instead of strictly
+// larger) so realistic up-down hand motions, which always carry some
+// horizontal jitter, qualify. REQUIRED_PEAKS down from 2 to 1 because
+// users intuitively flick the device down once for "shower", not twice;
+// the long cooldown still stops accidental re-triggers.
+constexpr float    VSHAKE_PEAK_G         = 0.7f;
+constexpr float    VSHAKE_LOW_HYS        = 0.4f;
+constexpr float    VSHAKE_DOMINANCE      = 0.6f;     // vAbs > horizMag * 0.6
 constexpr uint32_t VSHAKE_WINDOW_MS      = 800;
-constexpr uint8_t  VSHAKE_REQUIRED_PEAKS = 2;
+constexpr uint8_t  VSHAKE_REQUIRED_PEAKS = 1;
 constexpr uint32_t VSHAKE_COOLDOWN_MS    = 6000;     // long, so rain isn't spammed
 
 // Stroke detection: only counts *rising edges* of motion peaks (with
@@ -381,14 +386,15 @@ struct Pet {
   uint32_t hopChainStartMs = 0;
   int8_t   hopChainLastIdx = -1;         // last hop whose effects already fired
 
-  // Singing — triggered by the upright + left + right tilt sequence. Plays
-  // singing.wav (8 s) then listens via mic for 5 s for applause and rewards
-  // a loud peak with a happy reaction.
-  uint8_t  singSeqStep         = 0;      // 0 = idle, 1 = saw upright + left tilt
-  uint32_t singSeqLastMs       = 0;
-  uint32_t lastUprightMs       = 0;      // last time gy > 0.6 (anchor for the sequence)
-  bool     wasTiltLeft         = false;  // edge-detection state for gx
-  bool     wasTiltRight        = false;
+  // Singing — v3 gesture: heave-up (low → upright transition) followed by
+  // tilt-left then tilt-right. Plays singing.wav (8 s) then listens via
+  // mic for 5 s for applause and rewards a loud peak with a happy
+  // reaction. State machine in detectSingingGesture().
+  uint8_t  singSeqStep         = 0;      // 0=idle, 1=heave armed, 2=saw left tilt
+  uint32_t singSeqLastMs       = 0;      // time of the last accepted step (heave or left tilt)
+  uint32_t lastUprightMs       = 0;      // unused since v3 (kept for save-state compat)
+  bool     wasTiltLeft         = false;  // unused since v3 (kept for save-state compat)
+  bool     wasTiltRight        = false;  // unused since v3 (kept for save-state compat)
   uint32_t singStartMs         = 0;      // 0 = not singing
   uint32_t lastSingHeartMs     = 0;      // for periodic note/heart spawns
   uint32_t applauseListenStartMs = 0;    // 0 = not listening for applause
@@ -3836,12 +3842,32 @@ static void tickHopChain(uint32_t now) {
   }
 }
 
-// ─── Singing (upright + left + right tilt → sing → listen for applause) ──
+// ─── Singing (heave-up + left + right tilt → sing → listen for applause) ──
 
 static constexpr uint32_t kSingDurationMs   = 8000;
 static constexpr uint32_t kApplauseListenMs = 5000;
-static constexpr uint32_t kSingSeqTimeoutMs = 5000;
 static constexpr int      kApplauseThresh   = 6000;   // int16 peak threshold
+
+// Singing-gesture v3: heave-into-upright + tilt-left-then-right.
+//
+// v1 (upright + tilt-left + tilt-right sequence) had rising-edge bugs:
+// if the pet was already tilted at sequence start, `wasTiltLeft` was
+// permanently true and the rising edge never fired.
+// v2 ("hold upright + still 2s") was clean but triggered too often —
+// any pet sitting still on a desk would eventually fire singing
+// spontaneously.
+//
+// v3 keeps v2's "explicitly raised by the user" intent via a heave
+// detection (must transition from non-upright to upright within a short
+// window) AND requires the tilt-left → tilt-right gesture afterwards,
+// fixing v1's main bug because the heave guarantees gx is roughly zero
+// when the sequence starts. The tilt motion is intentionally slow/low-
+// magnitude so it's mechanically distinct from the shake gestures.
+static constexpr float    kSingUprightG        = 0.7f;     // gy threshold (mostly upright)
+static constexpr float    kSingLowGy           = 0.4f;     // gy below this = "not upright"
+static constexpr uint32_t kSingHeaveWindowMs   = 800;      // low → upright must happen within this
+static constexpr float    kSingTiltGx          = 0.4f;     // |gx| threshold for left/right tilt
+static constexpr uint32_t kSingSeqTimeoutMs    = 5000;     // tilt-left + tilt-right must finish within this
 
 static void detectSingingGesture(uint32_t now);   // defined further down
 
@@ -3899,13 +3925,10 @@ static void exitApplauseListen(uint32_t now) {
 
 static void tickSinging(uint32_t now) {
   // Run the gesture detector every frame.
+  // v2: detectSingingGesture handles its own state-reset when the
+  // hold conditions break, so the explicit timeout block from v1 is
+  // gone — kept the function-call shape unchanged otherwise.
   detectSingingGesture(now);
-
-  // Sequence-step timeout — if user takes too long, reset.
-  if (g_pet.singSeqStep != 0 &&
-      now - g_pet.singSeqLastMs > kSingSeqTimeoutMs) {
-    g_pet.singSeqStep = 0;
-  }
 
   // Singing in progress — heart trail + termination.
   if (g_pet.singStartMs != 0) {
@@ -3969,35 +3992,67 @@ static void tickSinging(uint32_t now) {
 // would lose the sequence. Anchor on a recent upright posture (last 4 s),
 // then watch for the rising edges of a left and right tilt within 5 s.
 static void detectSingingGesture(uint32_t now) {
-  // Anchor: gy > 0.6 means the device is at least mostly upright.
-  if (g_motion.gy > 0.6f) g_pet.lastUprightMs = now;
-
-  bool tiltLeft  = (g_motion.gx < -0.5f);
-  bool tiltRight = (g_motion.gx >  0.5f);
+  // v3 state machine (re-uses singSeqStep with new semantics):
+  //   0 = idle
+  //   1 = heave detected: just transitioned low→upright, waiting for
+  //       tilt-left.  singSeqLastMs = time of the upright observation.
+  //   2 = tilt-left was seen during the armed window. Waiting for
+  //       tilt-right to fire.  singSeqLastMs = time of the left-tilt.
+  // Plus a function-local static for "last time gy was below low threshold"
+  // so we can detect the upward heave (low → upright transition).
+  static uint32_t s_lowAtMs = 0;
 
   bool busy = g_pet.singStartMs != 0 || g_pet.applauseListenStartMs != 0 ||
               g_pet.travelTransitionMode || g_pet.shutdownAnnouncedAtMs != 0 ||
               g_pet.timerExpiring || g_pet.face == Face::Sleeping;
+  if (busy) {
+    g_pet.singSeqStep = 0;
+    return;
+  }
 
-  // Rising edge of a LEFT tilt — arm the sequence if we were upright recently.
-  if (tiltLeft && !g_pet.wasTiltLeft && !busy) {
-    if (g_pet.lastUprightMs != 0 &&
-        now - g_pet.lastUprightMs <= 4000) {
+  // Always track when the pet was last in a clearly non-upright pose.
+  // This is what lets us detect the heave-up transition later.
+  if (g_motion.gy < kSingLowGy) {
+    s_lowAtMs = now;
+  }
+
+  bool upright = (g_motion.gy > kSingUprightG);
+
+  // Step 0: arm only on a fresh heave (recently low + now upright).
+  // A pet that's been sitting upright for a while has s_lowAtMs far in
+  // the past and won't arm — that's the whole point.
+  if (g_pet.singSeqStep == 0) {
+    if (upright && s_lowAtMs != 0 && now - s_lowAtMs <= kSingHeaveWindowMs) {
       g_pet.singSeqStep   = 1;
       g_pet.singSeqLastMs = now;
     }
+    return;
   }
-  // Rising edge of a RIGHT tilt — fire if we already saw the left tilt.
-  if (tiltRight && !g_pet.wasTiltRight && !busy) {
-    if (g_pet.singSeqStep == 1 &&
-        now - g_pet.singSeqLastMs <= kSingSeqTimeoutMs) {
+
+  // Steps 1/2 share a common timeout — if the user takes too long, abort
+  // and require a fresh heave.
+  if (now - g_pet.singSeqLastMs > kSingSeqTimeoutMs) {
+    g_pet.singSeqStep = 0;
+    return;
+  }
+
+  // Step 1: heave armed. Look for tilt-left (gx < -threshold).
+  if (g_pet.singSeqStep == 1) {
+    if (g_motion.gx < -kSingTiltGx) {
+      g_pet.singSeqStep   = 2;
+      g_pet.singSeqLastMs = now;
+    }
+    return;
+  }
+
+  // Step 2: tilt-left seen. Look for tilt-right (gx > +threshold) → fire.
+  if (g_pet.singSeqStep == 2) {
+    if (g_motion.gx > kSingTiltGx) {
       startSinging(now);
       g_pet.singSeqStep = 0;
     }
+    return;
   }
-
-  g_pet.wasTiltLeft  = tiltLeft;
-  g_pet.wasTiltRight = tiltRight;
 }
 
 // ─── Two-finger gestures (spread + hand-warming hold) ──────────────────────

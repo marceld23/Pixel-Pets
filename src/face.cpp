@@ -5767,7 +5767,7 @@ static void drawHelpPageHopChain(M5Canvas& c) {
   helpLine(c, 184, tr(Str::HelpPHL5), accent);
 }
 
-// Page 8 — Singing (upright + L/R tilt → 8 s singing → 5 s applause window)
+// Page 8 — Singing (heave-up + L/R tilt → 8 s singing → 5 s applause window)
 static void drawHelpPageSinging(M5Canvas& c) {
   uint16_t body   = c.color565(230, 235, 245);
   uint16_t accent = c.color565(160, 220, 255);
