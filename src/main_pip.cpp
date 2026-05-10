@@ -32,6 +32,8 @@
 
 #if CONFIG_IDF_TARGET_ESP32S3
 #  include <driver/gpio.h>
+#  include <driver/rtc_io.h>
+#  include <esp_sleep.h>
 #endif
 
 #include "target_caps.h"
@@ -337,12 +339,24 @@ void enterDeepSleep() {
     gpio_set_pull_mode(GPIO_NUM_19, GPIO_FLOATING);
     gpio_set_pull_mode(GPIO_NUM_20, GPIO_FLOATING);
     delay(200);
+
+    // M5Unified has no _wakeupPin entry for board_M5StickS3 (see
+    // Power_Class.cpp _setupBoard switch — only StickCPlus2 maps power
+    // button → GPIO35). On the S3 _wakeupPin stays at 255 (= GPIO_NUM_MAX),
+    // so M5.Power.deepSleep() skips its esp_sleep_enable_ext0/1_wakeup()
+    // call and the chip enters deep sleep with NO wakeup source. Only a
+    // PMIC power-cycle brings it back, which feels like "won't wake".
+    // Set BtnA (GPIO11, RTC-capable, active-low) as an ext1 LOW wakeup
+    // ourselves before handing off.
+    constexpr uint64_t kBtnAMask = 1ULL << GPIO_NUM_11;
+    esp_sleep_enable_ext1_wakeup(kBtnAMask, ESP_EXT1_WAKEUP_ANY_LOW);
+    rtc_gpio_pullup_en(GPIO_NUM_11);
+    rtc_gpio_pulldown_dis(GPIO_NUM_11);
 #endif
 
-    // M5.Power.deepSleep(0, true) handles M5.Display.sleep(), enables
-    // ext0/ext1 wakeup on the board's _wakeupPin (GPIO35 = power button
-    // on StickC Plus 2), then calls esp_deep_sleep_start(). 0 = no timer
-    // wakeup; the device only comes back via the power button.
+    // On StickC Plus 2 (ESP32) M5.Power.deepSleep(0, true) configures
+    // ext0 wakeup on GPIO35 (power button) itself. On Stick S3 our manual
+    // ext1 setup above provides the wake source. 0 = no timer wakeup.
     M5.Power.deepSleep(0, true);
 }
 
@@ -502,7 +516,8 @@ void setup() {
             M5.Display.setBrightness(0);
 #if CONFIG_IDF_TARGET_ESP32S3
             // See enterDeepSleep() for the full rationale of the
-            // 3-step USB-PHY detach.
+            // 3-step USB-PHY detach + the BtnA ext1-wakeup workaround
+            // (M5Unified doesn't set _wakeupPin for board_M5StickS3).
             Serial.flush();
             Serial.end();
             gpio_set_direction(GPIO_NUM_19, GPIO_MODE_INPUT);
@@ -510,8 +525,12 @@ void setup() {
             gpio_set_pull_mode(GPIO_NUM_19, GPIO_FLOATING);
             gpio_set_pull_mode(GPIO_NUM_20, GPIO_FLOATING);
             delay(200);
+            constexpr uint64_t kBtnAMask = 1ULL << GPIO_NUM_11;
+            esp_sleep_enable_ext1_wakeup(kBtnAMask, ESP_EXT1_WAKEUP_ANY_LOW);
+            rtc_gpio_pullup_en(GPIO_NUM_11);
+            rtc_gpio_pulldown_dis(GPIO_NUM_11);
 #endif
-            // 0 = unlimited — wakes on USB or power button.
+            // 0 = unlimited — wakes on USB or BtnA (S3) / power button (Plus2).
             M5.Power.deepSleep(0);
         }
     }
