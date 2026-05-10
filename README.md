@@ -312,7 +312,7 @@ Small follow-up to 1.0.2. One firmware fix that closes a regression introduced i
 - Documented the slow ~1 Hz green LED blink as the visual confirmation that the chip is in ROM bootloader — no need to guess from "display is dark, did it work?"
 - Added a **UART recovery-flash recipe** for the case where the Stick S3's USB-C connector has developed loose D+/D- contacts (power pins still work, hence LED + charging, but USB enumeration is dead even on a fresh OS install). Wire a USB-TTL adapter to Hat2-Bus G43 (TX) / G44 (RX) / GND, enter download mode the usual way, and flash through the adapter with `esptool --before no_reset`. Confirmed working as the only path back for one user's stick after the USB-C port wore out across many cold-boot cycles
 
-
+### 1.0.2 — May 2026
 
 Small follow-up to 1.0.1. Two real fixes plus a homepage tweak.
 
