@@ -23,7 +23,7 @@
 
 A family of virtual pets on M5Stack hardware. **Three pet variants** — **Muffin** (CoreS3 + LLM), **Visu** (CoreS3 alone), **Goo-Goo** (Core2) — plus one optional **accessory**, **Pip** (M5StickC PLUS2), which acts as a pocket-sized companion device for any of the bigger pets. One source tree, five build envs (`cores3` / `visu` / `core2` / `pip` / `pip-s3`). Pet logic, animations, mini-games, ESP-NOW friends and weather/location are target-agnostic; voice and the front camera are CoreS3-only.
 
-**Version 1.0.1** — reliability release on top of 1.0.0. See [Version history](#version-history) at the bottom for the per-version scope.
+**Version 1.0.2** — small follow-up to 1.0.1, focused on motion-gesture reliability + a hardier Pip-S3 deep-sleep teardown. See [Version history](#version-history) at the bottom for the per-version scope.
 
 > **👨‍👦 A note from the makers**
 >
@@ -294,6 +294,27 @@ We'd love your help — code, ideas, bug reports, translations, a new sound, a f
 - 🐛 [**Issues**](https://github.com/marceld23/Pixel-Pets/issues) — bug reports, feature requests, "Justus has Strong Opinions™ on what feels right; pitch yours".
 
 ## Version history
+
+### 1.0.2 — May 2026
+
+Small follow-up to 1.0.1. Two real fixes plus a homepage tweak.
+
+**Motion-gesture reliability — Spielen / Regen / Singen now clearly distinguishable:**
+
+- Lowered the magnitude threshold for both shake gestures (1.0 g → 0.7 g for the play-shake and the rain-shower vertical shake). Reproducibly hard for kid-sized wrist motions to reach 1 g; 0.7 g triggers cleanly without false-firing on accidental jostles
+- Vertical-shake dominance ratio relaxed (1.0 → 0.6) so realistic up-down hand motions, which always carry some sideways jitter, qualify for "rain". Required vertical peaks dropped from 2 to 1 — one decisive down-flick is enough; users intuitively flick once for "shower"
+- Singing gesture redesigned: was an "upright + tilt-left + tilt-right rising-edge sequence" that broke whenever the pet was already slightly tilted at sequence start (the rising edge never fired). Now it's "**heave-up + tilt-left + tilt-right**": the user must transition the pet from low (gy<0.4) to upright (gy>0.7) within 800 ms, then complete the L+R tilt within 5 s. The heave guarantees gx ≈ 0 at sequence start so the rising edge fires reliably; a pet just sitting on the desk doesn't trigger because there's no fresh transition
+- Help-page 8 updated in DE + EN: "Hochheben, links + rechts kippen" / "Lift it up, tilt left + right"
+
+**Pip-S3 robust USB-PHY detach before deep sleep:**
+
+- 1.0.1's `Serial.flush()` + `Serial.end()` + 100 ms grace turned out not to be aggressive enough on every M5-Stick variant — one tested device still disappeared from the host after deep sleep, and only the 60-second-unplug recovery brought it back
+- 1.0.2 explicitly drives GPIO19 / GPIO20 (the D- / D+ pins on the ESP32-S3) to input + pull-mode floating before `esp_deep_sleep_start()`. This collapses the 1.5 kΩ D+ pull-up so the host sees an unambiguous detach instead of a frozen-but-attached device. Grace bumped 100 → 200 ms because Windows sometimes doesn't register the detach in under 200 ms
+- Plus: `M5.Power.isCharging()` is now polled up to 8× with 50 ms gaps at boot. The PMIC's charging-detect isn't stable for the first few ms after power-up — reading it once immediately could falsely return `false`, sending the brownout-protection branch straight into deep sleep with USB plugged in (and looking like a "won't boot" device to the user)
+
+**Site:**
+
+- New 2-minute YouTube-Short feature reel section between the hero demo and the deep-dive embed (covers voice control on Muffin, ESP-NOW Friends gift exchange, and a Pip wrist-flick treat throw — all on real hardware). Caption translated DE / EN, `iframe` aspect-ratio 9:16 to match the vertical Short format
 
 ### 1.0.1 — May 2026
 
