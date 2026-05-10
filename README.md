@@ -23,7 +23,7 @@
 
 A family of virtual pets on M5Stack hardware. **Three pet variants** — **Muffin** (CoreS3 + LLM), **Visu** (CoreS3 alone), **Goo-Goo** (Core2) — plus one optional **accessory**, **Pip** (M5StickC PLUS2), which acts as a pocket-sized companion device for any of the bigger pets. One source tree, five build envs (`cores3` / `visu` / `core2` / `pip` / `pip-s3`). Pet logic, animations, mini-games, ESP-NOW friends and weather/location are target-agnostic; voice and the front camera are CoreS3-only.
 
-**Version 1.0.2** — small follow-up to 1.0.1, focused on motion-gesture reliability + a hardier Pip-S3 deep-sleep teardown. See [Version history](#version-history) at the bottom for the per-version scope.
+**Version 1.0.3** — small follow-up to 1.0.2 fixing a Pip-S3 deep-sleep wake bug + correcting the S3 download-mode docs for the K150 hardware. See [Version history](#version-history) at the bottom for the per-version scope.
 
 > **👨‍👦 A note from the makers**
 >
@@ -295,7 +295,24 @@ We'd love your help — code, ideas, bug reports, translations, a new sound, a f
 
 ## Version history
 
-### 1.0.2 — May 2026
+### 1.0.3 — May 2026
+
+Small follow-up to 1.0.2. One firmware fix that closes a regression introduced in 1.0.2, and a docs correction so the next person doesn't lose hours to the same wrong setup steps.
+
+**Pip-S3 deep sleep now actually wakes back up:**
+
+- 1.0.2's "real deep sleep after 3 min idle" plus the USB-PHY detach were both correct, but together they exposed a third bug: `M5Unified::Power_Class::_setupBoard()` has no case for `board_M5StickS3` in the `_wakeupPin` switch, so `_wakeupPin` stayed at `255` (`GPIO_NUM_MAX`). `M5.Power.deepSleep(0, true)` then skipped its `esp_sleep_enable_ext0/1_wakeup()` call, the chip entered deep sleep with **no wakeup source at all**, and the only way back was a PMIC power-cycle (long-press to force-off → short-press to cold-boot)
+- 1.0.3 manually configures BtnA (GPIO11, RTC-capable on ESP32-S3) as an `ext1` active-low wakeup source before handing off to `M5.Power.deepSleep()`. Same one-line workaround applied in the brownout-protection boot path so a low-battery sleep doesn't strand the device either. After the fix: a short BtnA press wakes the Stick S3 cleanly from deep sleep, just like the StickC Plus 2 variant has worked all along
+- The StickC Plus 2 path (`pip` env, ESP32-PICO) is unchanged — its wakeup pin (GPIO35 = power button) was already correctly mapped in M5Unified
+
+**Pip setup docs corrected for the M5StickS3 (K150) hardware:**
+
+- The old `docs/setup-pip.md` "S3 revision" procedure was: "hold BtnA, press the side reset button for ~2 s." That's the **original PLUS2 S3 revision** procedure, where BtnA happens to be wired in parallel with GPIO0 (the strap pin) and there's a separate hardware reset button on the side. On the **newer M5StickS3 (SKU K150)** — which is what most people now buy — BtnA is GPIO11 (not GPIO0), and there is no separate reset button (only the PM1 PMIC power button). The published procedure simply could not trigger download mode on K150 hardware
+- The setup doc now splits the S3 path into two clearly-labelled variants: PLUS2 S3 keeps the BtnA + reset procedure, K150 gets a **Hat2-Bus G0 ↔ GND bridge** procedure with a PMIC cold-boot trigger. Includes the full 16-pin Hat2-Bus pinout table (G0 on pin 4, GND on pin 1, plus the UART pins for the recovery path below)
+- Documented the slow ~1 Hz green LED blink as the visual confirmation that the chip is in ROM bootloader — no need to guess from "display is dark, did it work?"
+- Added a **UART recovery-flash recipe** for the case where the Stick S3's USB-C connector has developed loose D+/D- contacts (power pins still work, hence LED + charging, but USB enumeration is dead even on a fresh OS install). Wire a USB-TTL adapter to Hat2-Bus G43 (TX) / G44 (RX) / GND, enter download mode the usual way, and flash through the adapter with `esptool --before no_reset`. Confirmed working as the only path back for one user's stick after the USB-C port wore out across many cold-boot cycles
+
+
 
 Small follow-up to 1.0.1. Two real fixes plus a homepage tweak.
 
