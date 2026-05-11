@@ -67,7 +67,7 @@ jobs:
         run: pip install platformio
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: c-cpp
           queries: security-and-quality
@@ -80,7 +80,7 @@ jobs:
       # .pio/libdeps/ third-party libs. We filter the SARIF post-analysis
       # instead, which is the GitHub-recommended workaround.
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:c-cpp/env:${{ matrix.env }}"
           output: sarif-results
@@ -95,7 +95,7 @@ jobs:
           mv sarif-results/cpp.filtered.sarif sarif-results/cpp.sarif
 
       - name: Upload filtered SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: sarif-results/cpp.sarif
           category: "/language:c-cpp/env:${{ matrix.env }}"
