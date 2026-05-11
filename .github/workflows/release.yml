@@ -118,7 +118,7 @@ jobs:
 
       - name: Upload binaries as workflow artifact  (manual dry run only)
         if: steps.meta.outputs.mode == 'test'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pixel-pets-firmware-${{ steps.meta.outputs.version }}
           path: release-bins/*.bin
