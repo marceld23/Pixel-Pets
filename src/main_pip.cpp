@@ -111,11 +111,17 @@ bool updateMotion(uint32_t now) {
     // alpha=0.04, especially during sustained shakes.
     float rawMag = sqrtf(ax*ax + ay*ay + az*az);
     float mag    = fabsf(rawMag - 1.0f);
-    // Higher noise floor (0.10 g, ~20× sensor noise) so quiet desk
-    // vibration / fan rumble while Pip rests does not mark "user is here"
-    // and falsely wake the device from auto-sleep — that bounce caused
-    // the audible "click" (= Sound::Wake replay) every wake-sleep cycle.
-    if (mag > 0.10f) g_pet.lastInteractionMs = now;
+    // Noise floor for "user is here" idle detection. Raised 0.10 → 0.20 g:
+    // 0.10 g was tuned on a well-calibrated unit, but the MPU6886 ships
+    // uncalibrated and on some M5StickC PLUS2 boards the at-rest |a|−1g
+    // bias alone exceeds 0.10 g (accel offset tolerance ±50–80 mg/axis +
+    // mount tilt). That kept lastInteractionMs perpetually fresh so the
+    // 60 s Zzz screen bounced straight back to Idle, replaying the audible
+    // Sound::Wake every cycle (buzzer vibration then re-fed the IMU). At
+    // 0.20 g the resting bias stays below the floor while a genuine pick-up
+    // still clears it; real shake detection is unaffected (SHAKE_PEAK_G =
+    // 0.4 g, a separate, higher threshold).
+    if (mag > 0.20f) g_pet.lastInteractionMs = now;
 
     bool nowAbove = mag > pip::SHAKE_PEAK_G;
     bool nowBelow = mag < pip::SHAKE_LOW_HYS;
@@ -530,7 +536,12 @@ void setup() {
             rtc_gpio_pullup_en(GPIO_NUM_11);
             rtc_gpio_pulldown_dis(GPIO_NUM_11);
 #endif
-            // 0 = unlimited — wakes on USB or BtnA (S3) / power button (Plus2).
+            // 0 = no timer wakeup. Wake source is BtnA (S3, ext1/GPIO11
+            // configured above) or the power button (Plus2, ext0/GPIO35
+            // set by M5.Power.deepSleep via _wakeupPin). USB does NOT
+            // wake either variant — the PICO has no USB peripheral and on
+            // the S3 the USB-PHY was just detached. Charging still works
+            // while asleep; the device only resumes on the button press.
             M5.Power.deepSleep(0);
         }
     }
